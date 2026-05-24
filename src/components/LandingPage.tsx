@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   Star, Clock, Package, 
-  UtensilsCrossed, Zap, Coffee, IceCream, Droplet 
+  UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info 
 } from 'lucide-react';
 import { 
   MENU_LINGOTES, 
@@ -95,6 +95,14 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
 
       {/* CONTENIDO DEL MENÚ */}
       <main className="p-4 md:p-6 space-y-6 max-w-lg mx-auto min-h-[60vh]">
+         {/* NOTA INFORMATIVA */}
+         <div className="bg-amber-50/50 border border-amber-100/50 p-4 rounded-2xl flex gap-3 items-center">
+            <Info size={16} className="text-amber-600 shrink-0" />
+            <p className="text-[9px] font-bold text-amber-800 uppercase italic leading-tight">
+               Imágenes con fines ilustrativos. Los lingotes se sirven al natural; salsas y extras se venden por separado.
+            </p>
+         </div>
+
          <div className="grid grid-cols-1 gap-6">
             {activeData.map((item: any) => (
               <div key={item.id} className="group bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col active:scale-[0.98] transition-all relative">

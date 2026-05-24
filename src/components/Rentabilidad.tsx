@@ -21,6 +21,7 @@ interface EscandalloCompleto {
   porciones: number;
   packaging: number;
   margenObjetivo: number;
+  esProductoFinal: boolean; // TRUE: Venta al cliente, FALSE: Insumo propio (pan, salsas)
   imagen?: string; 
   ingredientes: Ingrediente[];
 }
@@ -90,6 +91,7 @@ const Rentabilidad = () => {
       porciones: 1,
       packaging: 0,
       margenObjetivo: 65,
+      esProductoFinal: true,
       ingredientes: [{ id: '1', nombre: 'Insumo 1', precioCompra: 0, cantidadReceta: 0, merma: 0 }]
     };
     setRecetas(prev => [...prev, nueva]);
@@ -139,7 +141,13 @@ const Rentabilidad = () => {
 
   const costoInsumosTotal = activeReceta?.ingredientes.reduce((sum, ing) => sum + calcularCostoIngrediente(ing), 0) || 0;
   const costoBatchInsumos = costoInsumosTotal + (activeReceta?.packaging || 0);
-  const costoBatchTotalReal = costoBatchInsumos + (cuotaOperativaPorUnidad * (activeReceta?.porciones || 1));
+  
+  // LA CLAVE: Solo sumamos gastos fijos si es producto de venta final
+  const gastosFijosAplicables = activeReceta?.esProductoFinal 
+    ? (cuotaOperativaPorUnidad * (activeReceta?.porciones || 1)) 
+    : 0;
+
+  const costoBatchTotalReal = costoBatchInsumos + gastosFijosAplicables;
   const costoPorPorcion = costoBatchTotalReal / (activeReceta?.porciones || 1);
   const divisorMargen = (100 - (activeReceta?.margenObjetivo || 65)) / 100;
 
@@ -368,7 +376,16 @@ const Rentabilidad = () => {
                     <label className="text-[8px] md:text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-1 text-left">Nombre Receta</label>
                     <input className="text-base md:text-4xl font-black text-slate-800 w-full bg-slate-50 p-2.5 md:p-0 md:bg-transparent rounded-lg outline-none border-b-2 border-transparent focus:border-lingote-gold uppercase tracking-tighter" value={activeReceta.nombre} onChange={(e) => actualizarReceta({ nombre: e.target.value })} />
                   </div>
-                  <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 md:gap-6 w-full">
+                  <div className="flex flex-col sm:grid sm:grid-cols-4 gap-2 md:gap-6 w-full">
+                    <div className="bg-slate-50 p-3 rounded-lg md:rounded-[2rem] border border-lingote-gold/30 shadow-inner text-slate-700 flex justify-between items-center sm:block">
+                      <label className="text-[7px] md:text-[9px] font-black uppercase text-lingote-gold block mb-1 tracking-widest text-left leading-none italic">¿Es Venta Final?</label>
+                      <button 
+                        onClick={() => actualizarReceta({ esProductoFinal: !activeReceta.esProductoFinal })}
+                        className={`px-4 py-1.5 rounded-full font-black text-[10px] uppercase transition-all ${activeReceta.esProductoFinal ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-400'}`}
+                      >
+                        {activeReceta.esProductoFinal ? 'Sí (Venta)' : 'No (Insumo)'}
+                      </button>
+                    </div>
                     <div className="bg-slate-50 p-3 rounded-lg md:rounded-[2rem] border border-slate-100 shadow-inner text-slate-700 flex justify-between items-center sm:block">
                       <label className="text-[8px] md:text-[10px] font-black uppercase text-lingote-gold block mb-1 tracking-widest text-left">Rinde</label>
                       <input type="number" min="1" className="w-20 sm:w-full bg-transparent font-black text-base md:text-3xl outline-none italic uppercase text-right sm:text-left" value={activeReceta.porciones} onChange={(e)=>actualizarReceta({ porciones: Math.max(1, Number(e.target.value)) })} />
