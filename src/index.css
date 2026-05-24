@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lingote-gold: #D4AF37;
+  --color-lingote-gold-light: #F3CF7A;
+  --color-lingote-black: #0F0F0F;
+  --color-lingote-dark: #1A1A1A;
+  
+  /* Nuevos colores para el tema claro/gris premium */
+  --color-lingote-bg: #F8FAFC;    /* Slate 50 - Fondo principal limpio */
+  --color-lingote-card: #FFFFFF;  /* Blanco puro para tarjetas */
+  --color-lingote-accent: #E2E8F0; /* Slate 200 - Bordes y detalles */
+  --color-lingote-text: #1E293B;   /* Slate 800 - Texto principal */
+  
+  --background-image-gold-gradient: linear-gradient(135deg, #D4AF37 0%, #F3CF7A 50%, #D4AF37 100%);
+}
+
+@layer base {
+  body {
+    @apply bg-lingote-bg text-lingote-text antialiased selection:bg-lingote-gold selection:text-white;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Ocultar barra de scroll */
+::-webkit-scrollbar {
+  display: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Asegurar opacidad total en la impresión */
+  * {
+    opacity: 1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: 100mm 100mm;
+    margin: 0;
+  }
+
+  #label-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100mm;
+    height: 100mm;
+    z-index: 9999;
+    background: white !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+}
