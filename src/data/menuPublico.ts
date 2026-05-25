@@ -1,5 +1,5 @@
 export interface ProductoMenu {
-  id: number | string;
+  id: string;
   nombre: string;
   precio: number;
   desc?: string;
@@ -18,7 +18,7 @@ export interface Promocion extends ProductoMenu {
 
 export const MENU_LINGOTES: ProductoMenu[] = [
   {
-    id: 1,
+    id: "lin-1",
     nombre: "Lingote Clásico",
     precio: 1500,
     descripcion: "La esencia de la tradición española. Nuestra tortilla artesanal, jugosa y dorada, servida sobre pan artesano. (Extras de salsa disponibles por ₡500).",
@@ -29,7 +29,7 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     personalizable: false 
   },
   {
-    id: 2,
+    id: "lin-2",
     nombre: "Lingote Tico",
     precio: 2000,
     descripcion: "El encuentro de dos mundos. El alma de nuestra tortilla española se abraza al sabor criollo del gallo pinto y la dulzura del plátano maduro. (Servido al natural, añade natilla por ₡500).",
@@ -40,7 +40,7 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     personalizable: false
   },
   {
-    id: 3,
+    id: "lin-3",
     nombre: "Lingote Patrón",
     precio: 3000,
     descripcion: "Para los que mandan en la mesa. Un lingote imponente cargado con 100g de cerdo mechado a fuego lento, aguacate nacional y cebolla encurtida. (Personalízalo con tu salsa favorita por ₡500).",
@@ -51,7 +51,7 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     personalizable: false 
   },
   {
-    id: 5,
+    id: "lin-5",
     nombre: "Lingote Supremo",
     precio: 4000,
     descripcion: "La experiencia definitiva de fusión. Un festín donde no falta nada: pinto, 100g de cerdo mechado, aguacate y tortilla. (Añade el toque final con un extra de salsa por ₡500).",
@@ -62,7 +62,7 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     personalizable: false 
   },
   {
-    id: 6,
+    id: "lin-6",
     nombre: "Bocata Español",
     precio: 2500,
     descripcion: "Nuestra tortilla artesanal jugosa en pan de baguette artesanal. ¡Incluye una salsa a elegir (Alioli o Natilla) para la experiencia perfecta!",
@@ -76,7 +76,7 @@ export const MENU_LINGOTES: ProductoMenu[] = [
 
 export const MENU_POSTRES: ProductoMenu[] = [
   { 
-    id: 30, 
+    id: "pos-30", 
     nombre: "La Torrijona", 
     precio: 1950, 
     desc: "Torrija de Dona artesanal servida con helado de vainilla.", 
@@ -85,7 +85,7 @@ export const MENU_POSTRES: ProductoMenu[] = [
     disponible: true
   },
   { 
-    id: 31, 
+    id: "pos-31", 
     nombre: "Mestizaje Caprichoso", 
     precio: 1950, 
     desc: "Refrescante Triffle de 10oz: Capas de galleta María crujiente y cremoso artesanal de limón.", 
@@ -94,7 +94,7 @@ export const MENU_POSTRES: ProductoMenu[] = [
     disponible: true
   },
   { 
-    id: 32, 
+    id: "pos-32", 
     nombre: "Lingote Vasco", 
     precio: 3000, 
     desc: "Tarta de Queso Vasca, cremosa y horneada al estilo tradicional.", 
@@ -108,8 +108,8 @@ export const MENU_PROMOCIONES: Promocion[] = [
   {
     id: 'promo-express',
     nombre: 'EL COMBO BOCATA ⚡',
-    precio: 3000,
-    precioAnterior: 3400,
+    precio: 3500,
+    precioAnterior: 3900,
     ahorro: 400,
     desc: 'La opción más rápida: 1 Bocata Real (con salsa) + 1 Bebida Natural.',
     disponible: true,
@@ -120,7 +120,7 @@ export const MENU_PROMOCIONES: Promocion[] = [
     precio: 3500,
     precioAnterior: 3950,
     ahorro: 450,
-    desc: 'Sabor local: 1 Lingote Tico + 1 Postre a elegir. (Salsa se vende por separado).',
+    desc: 'Sabor local: 1 Lingote Tico + (Torrijona o Mestizaje Caprichoso).',
     disponible: true,
   },
   {
@@ -129,22 +129,50 @@ export const MENU_PROMOCIONES: Promocion[] = [
     precio: 4500,
     precioAnterior: 5050,
     ahorro: 550,
-    desc: 'Menú completo: 1 Lingote Clásico + 1 Bebida + 1 Postre. (Salsa se vende por separado).',
+    desc: 'Menú completo: 1 Lingote Clásico + 1 Bebida + (Torrijona o Mestizaje Caprichoso). (Salsa se vende por separado).',
+    disponible: true,
+  },
+  {
+    id: 'PROMO-SOLO',
+    nombre: 'EL MENU DEL PATRÓN',
+    precio: 5000,
+    precioAnterior: 6550,
+    ahorro: 1550,
+    desc: 'Para estómagos valientes: 1 Lingote Patrón + 1 Bebida + 1 Postre a elegir.',
+    disponible: true,
+  },
+  {
+    id: 'promo-supremo-individual',
+    nombre: 'COMBO SUPREMO XL',
+    precio: 6000,
+    precioAnterior: 7350,
+    ahorro: 1350,
+    desc: 'La experiencia total para uno: 1 Lingote Supremo + 1 Bebida + 1 Postre a elegir.',
+    disponible: true,
+  },
+  {
+    id: 'PROMO-REAL',
+    nombre: 'PROMO REAL + REGALÍA',
+    precio: 10000,
+    precioAnterior: 12700,
+    ahorro: 2700,
+    desc: 'Banquete para dos: 2 Lingotes Supremos + 2 Bebidas + 1 Lingote Clásico ¡GRATIS!',
+    imagen: 'promo-real.webp',
     disponible: true,
   }
 ];
 
 export const MENU_BEBIDAS: ProductoMenu[] = [
   { 
-    id: 1, 
+    id: "beb-1", 
     nombre: "Natural de Temporada", 
-    precio: 1200, 
+    precio: 1400, 
     desc: "Fresco 100% Natural (16oz).", 
     imagen: "cas.webp" ,
     disponible: true
   },
   { 
-    id: 2, 
+    id: "beb-2", 
     nombre: "Mora en Leche", 
     precio: 1600, 
     desc: "Cremosa y dulce.", 
@@ -153,7 +181,16 @@ export const MENU_BEBIDAS: ProductoMenu[] = [
     disponible: true 
   },
   { 
-    id: 4, 
+    id: "beb-3", 
+    nombre: "Chocolate", 
+    precio: 1600, 
+    desc: "Caliente", 
+    imagen: "chocolate.webp", 
+    alergenos: ["🥛"] ,
+    disponible: true
+  },
+  { 
+    id: "beb-4", 
     nombre: "Agua Embotellada", 
     precio: 800, 
     desc: "Fría (500ml).", 
@@ -164,31 +201,24 @@ export const MENU_BEBIDAS: ProductoMenu[] = [
 
 export const MENU_SALSAS: ProductoMenu[] = [
   { 
-    id: 54, 
+    id: "sal-54", 
     nombre: "Natilla Cremosa", 
     precio: 500, 
     desc: "El complemento perfecto para tu pinto (40ml).", 
     disponible: true
   },
   { 
-    id: 50, 
-    nombre: "Alioli Casero", 
-    precio: 500, 
-    desc: "Receta tradicional de la casa: Ajo y aceite (40ml).", 
-    disponible: true
-  },
-  { 
-    id: 51, 
+    id: "sal-51", 
     nombre: "Salsa Caribeña", 
     precio: 500, 
     desc: "Toque dulce y picante suave con aroma a limón (40ml).", 
     disponible: true
   },
   { 
-    id: 52, 
-    nombre: "Chipotle Ahumado", 
+    id: "sal-52", 
+    nombre: "Alioli de Chipotle Ahumado", 
     precio: 500, 
-    desc: "Ahumada, cremosa y con picante medio (40ml).", 
+    desc: "Con Sabor a Ajo, Ahumada, cremosa y con picante medio (40ml).", 
     disponible: true
   }
 ];

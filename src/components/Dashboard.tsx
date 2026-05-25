@@ -36,12 +36,34 @@ interface GastosGlobales {
 const Dashboard = () => {
   const [recetas, setRecetas] = useState<EscandalloCompleto[]>([]);
   const [gastos, setGastos] = useState<GastosGlobales | null>(null);
+  const [ventasMes, setVentasMes] = useState({ unidades: 0, bruto: 0 });
 
   useEffect(() => {
     const saved = localStorage.getItem('lingote_escandallos');
     const savedGastos = localStorage.getItem('lingote_gastos_globales');
+    const savedVentas = localStorage.getItem('lingote_bitacora_ventas');
+    
     if (saved) setRecetas(JSON.parse(saved));
     if (savedGastos) setGastos(JSON.parse(savedGastos));
+    
+    if (savedVentas) {
+      const historico = JSON.parse(savedVentas);
+      const hoy = new Date();
+      const esteMes = historico.filter((r: any) => {
+        const fechaVenta = new Date(r.fecha);
+        return fechaVenta.getMonth() === hoy.getMonth() && fechaVenta.getFullYear() === hoy.getFullYear();
+      });
+      
+      const stats = esteMes.reduce((acc: any, r: any) => {
+        const unidadesDia = r.ventas.reduce((sum: number, v: any) => sum + v.cantidad, 0);
+        return {
+          unidades: acc.unidades + unidadesDia,
+          bruto: acc.bruto + r.totalBruto
+        };
+      }, { unidades: 0, bruto: 0 });
+      
+      setVentasMes(stats);
+    }
   }, []);
 
   // --- LÓGICA DE INTELIGENCIA ---
@@ -101,6 +123,32 @@ const Dashboard = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-20 text-left">
       
+      {/* SECCIÓN DE PROGRESO REAL (BITÁCORA) */}
+      <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-xl relative overflow-hidden">
+         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+            <div className="flex-1 w-full space-y-4">
+               <div>
+                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-400 italic">Rendimiento Real • Mayo 2026</h4>
+                  <div className="flex items-end gap-3 mt-2">
+                     <h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-none italic">{ventasMes.unidades}</h2>
+                     <p className="text-xs font-bold text-slate-400 uppercase mb-1">Unidades vendidas de {gastos?.metaVentasMensual || 0} (Meta)</p>
+                  </div>
+               </div>
+               {/* BARRA DE PROGRESO */}
+               <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                  <div 
+                    className="h-full bg-slate-900 transition-all duration-1000 ease-out"
+                    style={{ width: `${Math.min(100, (ventasMes.unidades / (gastos?.metaVentasMensual || 1)) * 100)}%` }}
+                  ></div>
+               </div>
+            </div>
+            <div className="bg-slate-900 p-6 rounded-3xl text-white text-center min-w-[200px] shadow-2xl border border-white/10">
+               <p className="text-[10px] font-black uppercase text-lingote-gold tracking-widest mb-1 italic">Ingreso Bruto Mes</p>
+               <h3 className="text-3xl font-black tracking-tighter italic leading-none">₡{ventasMes.bruto.toLocaleString()}</h3>
+            </div>
+         </div>
+      </div>
+
       {/* 1. KPIS PRINCIPALES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group border border-white/5">

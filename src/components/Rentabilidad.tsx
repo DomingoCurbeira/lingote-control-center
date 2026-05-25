@@ -149,7 +149,7 @@ const Rentabilidad = () => {
 
   const costoBatchTotalReal = costoBatchInsumos + gastosFijosAplicables;
   const costoPorPorcion = costoBatchTotalReal / (activeReceta?.porciones || 1);
-  const divisorMargen = (100 - (activeReceta?.margenObjetivo || 65)) / 100;
+  const divisorMargen = (100 - (activeReceta?.margenObjetivo ?? 65)) / 100;
 
   const pvpSugerido = divisorMargen > 0 ? (costoPorPorcion / divisorMargen) : 0;
   const gananciaNetaUnidad = pvpSugerido - costoPorPorcion;

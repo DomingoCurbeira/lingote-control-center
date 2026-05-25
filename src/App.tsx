@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp 
+  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList 
 } from 'lucide-react';
 import Rentabilidad from './components/Rentabilidad';
 import FichasB2B from './components/FichasB2B';
@@ -10,6 +10,7 @@ import AdminLogin from './components/AdminLogin';
 import LandingPage from './components/LandingPage';
 import Etiquetador from './components/Etiquetador';
 import Dashboard from './components/Dashboard';
+import BitacoraVentas from './components/BitacoraVentas';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -37,6 +38,7 @@ function App() {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
+    { id: 'ventas', label: 'Bitácora', icon: ClipboardList },
     { id: 'finanzas', label: 'Rentabilidad', icon: Wallet },
     { id: 'fichas', label: 'Fichas B2B', icon: FileText },
     { id: 'roi', label: 'Calculadora ROI', icon: TrendingUp },
@@ -135,6 +137,7 @@ function App() {
         <div className="max-w-6xl mx-auto">
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'etiquetas' && <Etiquetador />}
+          {activeTab === 'ventas' && <BitacoraVentas />}
           {activeTab === 'finanzas' && <Rentabilidad />}
           {activeTab === 'fichas' && <FichasB2B />}
           {activeTab === 'roi' && <CalculadoraROI />}

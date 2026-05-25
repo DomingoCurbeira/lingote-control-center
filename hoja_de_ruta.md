@@ -1,21 +1,22 @@
-# 🗺️ Hoja de Ruta: Estado del Proyecto
+# 🗺️ Hoja de Ruta: El Lingote Español
 
-## ✅ Avances Actuales (Misión Cumplida)
-1.  **Dashboard Maestro:** Estructura unificada para todos los módulos administrativos.
-2.  **Etiquetador de Producción:** Generador de etiquetas legales con sellos automáticos.
-3.  **Ingeniería de Menú Pro:** Sistema de escandallos con gastos fijos amortizados y margen neto real.
-4.  **Fichas B2B Dinámicas:** Documentos comerciales con tabla nutricional RTCA completa y descarga PNG.
-5.  **Códice SOP (Manuales):** Gestor de procesos paso a paso con descarga segmentada en dos hojas A4.
-6.  **Saneamiento de Datos:** Base de datos maestra restaurada y corregida.
+## Fase 1: Cimientos y Estabilización ✅
+- [x] Estructura Base React + TS.
+- [x] Base de Datos Maestra (Master Database).
+- [x] Sistema de Escandallos (Rentabilidad).
+- [x] Módulo B2B (Fichas Técnicas).
+- [x] Códice SOP (Manuales de Operación).
+- [x] Refinamiento de visibilidad en pantallas ultra-estrechas.
 
-## 🚧 En Proceso (Detalle para la próxima sesión)
-- **Refinamiento Mobile:** Aunque es funcional, las previsualizaciones A4 necesitan un ajuste de escalado más agresivo para evitar el desborde en pantallas muy pequeñas.
-- **Sincronización:** Posibilidad de vincular escandallos de `localStorage` con la `MASTER_DATABASE` estática.
+## Fase 2: Inteligencia y Seguridad ✅
+- [x] **Seguridad Admin:** Acceso por URL secreta (`?mode=admin`) y PIN (1234).
+- [x] **PWA:** Aplicación instalable con icono personalizado y modo offline.
+- [x] **Calculadora de ROI:** Simulador de amortización de inversiones.
+- [x] **Bitácora de Ventas:** Registro de unidades diarias y cierre de caja.
+- [x] **Dashboard 2.0:** Punto de Equilibrio basado en Margen de Contribución.
 
-## 🔜 Tareas Pendientes (Próximos Pasos)
-1.  **Calculadora de ROI Avanzada:** Simulador de ganancias según volumen de ventas proyectado.
-2.  **Landing Pages QR:** Diseñar las páginas de aterrizaje para el cliente final cuando escanee las etiquetas.
-3.  **Módulo de Inventario:** Control simple de stock crítico basado en las recetas.
-
----
-*Última actualización: 22 de Mayo de 2026*
+## Fase 3: Operación Premium y Expansión 🚀
+- [x] **Landing Page:** Menú digital público por categorías (Lingotes, Promos, Postres, Bebidas, Salsas).
+- [ ] **Simulador de Precios Dinámicos:** Jugar con el impacto de subir ₡100 o ₡200 en el volumen mensual.
+- [ ] **Generador de Reportes Mensuales:** Resumen de rentabilidad para exportar a PDF.
+- [ ] **Sincronización Cloud:** (Opcional) Guardar datos en la nube para multi-dispositivo.

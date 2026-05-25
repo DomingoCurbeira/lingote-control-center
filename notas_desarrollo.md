@@ -1,21 +1,23 @@
-# 📝 Notas de Desarrollo: Lingote Control Center
+# 📔 Notas de Desarrollo: El Lingote Español
 
-## 🚀 Concepto de Marca
-"Raíces Españolas, Corazón Tico". Fusión de técnica de alta cocina española (tortilla de patatas en horno, técnica de paella para el pinto) con el sabor auténtico de Costa Rica.
+## 🛡️ Seguridad: El Sistema de "Dos Puertas"
+Para proteger la información financiera sin una base de datos centralizada:
+- Se implementó un detector en `App.tsx` que muestra la `LandingPage.tsx` (Pública) por defecto.
+- El acceso administrativo se oculta tras un **Triple Tap** en el logo de la Landing.
+- Se añadió un componente `AdminLogin.tsx` con teclado numérico para validar el PIN `1234`.
 
-## 🛠️ Arquitectura Técnica
-- **Frontend:** React + Vite + Tailwind CSS v4.
-- **Iconografía:** Lucide-React.
-- **Exportación:** `html-to-image` (Generación de PNG de alta fidelidad con PixelRatio 3).
-- **Persistencia:** `localStorage` (lingote_escandallos, lingote_gastos_globales, lingote_sops).
-- **Diseño:** "Light Premium" (#F8FAFC / #D4AF37 / #0F172A).
+## 📈 Lógica Financiera Corregida
+- **Punto de Equilibrio:** Se cambió la fórmula para usar el **Margen de Contribución**. Esto permite saber cuántas unidades reales pagan los costos fijos + salario, evitando números inflados por la ganancia extra.
+- **Insumos Propios:** Se añadió un flag `esProductoFinal` para que sub-recetas (como la Focaccia) no carguen con la cuota operativa del local, evitando la duplicidad de gastos.
+- **Mermas:** Se restringió el input a valores positivos para evitar que el desperdicio reste costo en lugar de sumarlo.
 
-## ⚖️ Estándares Financieros y Legales
-- **Fórmula de Rentabilidad:** Margen sobre Ventas real `PVP = Costo Total / (1 - Margen Deseado)`.
-- **Base de Costos:** Incluye Insumos + Packaging + Cuota Operativa (Alquiler/Servicios).
-- **Normativa Nutricional:** Cumplimiento con RTCA (Energía, Proteína, Carbos, Azúcares, Fibra, Grasa Total, Saturada, Trans, Colesterol, Sodio).
+## 📱 Ergonomía Mobile-First (PWA)
+- Se configuró el `manifest.webmanifest` para que la app se instale en el escritorio del celular.
+- Se implementó `origin-center` en las previsualizaciones A4 para asegurar que el documento se vea centrado y completo en cualquier tamaño de pantalla.
+- Se rediseñó el selector de categorías de la Landing Page para ser una cuadrícula de 5 columnas (sin scroll).
 
-## 📐 Especificaciones de Salida
-- **Etiquetas:** 10x10 cm (Seguridad 96mm).
-- **Fichas B2B / SOP:** Formato A4 exacto (210x297mm).
-- **Mobile First:** Prioridad absoluta a la operatividad táctil, transformando tablas complejas en tarjetas verticales.
+## 💰 Estrategia de Precios (Debate)
+- **Gancho:** Lingote Clásico a ₡1,500.
+- **Crecimiento:** Lingote Tico a ₡2,000 (sin natilla).
+- **Margen Extra:** Todas las salsas y extras a ₡500 para subir el ticket promedio de forma orgánica.
+- **Sueldo:** Se garantiza el salario de Domingo (₡400k) como un gasto operativo base.
