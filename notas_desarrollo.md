@@ -16,8 +16,15 @@ Para proteger la información financiera sin una base de datos centralizada:
 - Se implementó `origin-center` en las previsualizaciones A4 para asegurar que el documento se vea centrado y completo en cualquier tamaño de pantalla.
 - Se rediseñó el selector de categorías de la Landing Page para ser una cuadrícula de 5 columnas (sin scroll).
 
-## 💰 Estrategia de Precios (Debate)
-- **Gancho:** Lingote Clásico a ₡1,500.
-- **Crecimiento:** Lingote Tico a ₡2,000 (sin natilla).
-- **Margen Extra:** Todas las salsas y extras a ₡500 para subir el ticket promedio de forma orgánica.
-- **Sueldo:** Se garantiza el salario de Domingo (₡400k) como un gasto operativo base.
+## ☁️ Sincronización Cloud (Supabase)
+Se ha integrado Supabase como base de datos en tiempo real:
+- **Tabla `disponibilidad`:** Controla el stock global. Un cambio en el panel admin se refleja instantáneamente en todos los clientes vía suscripción Realtime.
+- **Tabla `bitacora_ventas`:** Persistencia de cierres diarios. El Dashboard ahora calcula el rendimiento real del mes basándose en datos de la nube.
+- **Seguridad:** Las políticas RLS están configuradas para acceso anónimo (público) por simplicidad operativa inicial.
+
+## 🥘 Sistema POS y Pedidos WhatsApp
+- **Zustand:** Se utiliza para gestionar el estado del carrito de compras de forma persistente en el dispositivo del cliente.
+- **WhatsApp "Maestro":** Los mensajes usan códigos Unicode (`\u{...}`) para garantizar que los emojis se vean perfectos en iOS y Android.
+- **Pasarela SINPE:** Flujo de 2 pasos. Primero asistente bancario con botones de copiar, luego ingreso del comprobante. Esto reduce errores de digitación.
+- **Identificación:** Se implementó un perfil de usuario (nombre y teléfono) que se guarda localmente y se adjunta a cada mensaje de WhatsApp.
+- **ID de Pedido:** Cada transacción genera un código aleatorio de 4 caracteres para facilitar la identificación en cocina.

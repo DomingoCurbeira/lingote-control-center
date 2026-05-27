@@ -1,44 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
-  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power 
+  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users 
 } from 'lucide-react';
 import Rentabilidad from './components/Rentabilidad';
 import FichasB2B from './components/FichasB2B';
 import ManualesSOP from './components/ManualesSOP';
 import CalculadoraROI from './components/CalculadoraROI';
-import AdminLogin from './components/AdminLogin';
 import LandingPage from './components/LandingPage';
 import Etiquetador from './components/Etiquetador';
 import Dashboard from './components/Dashboard';
 import BitacoraVentas from './components/BitacoraVentas';
 import GestionStock from './components/GestionStock';
+import CarteraClientes from './components/CarteraClientes';
+import { useUserStore } from './store/useUserStore';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isAdminRoute, setIsAdminRoute] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'admin') {
-      setIsAdminRoute(true);
-    }
-    const savedAuth = sessionStorage.getItem('lingote_admin_auth');
-    if (savedAuth === 'true') {
-      setIsAuthorized(true);
-    }
-  }, []);
-
-  const handleAdminSuccess = () => {
-    setIsAuthorized(true);
-    sessionStorage.setItem('lingote_admin_auth', 'true');
-    window.history.replaceState({}, document.title, "/");
-  };
+  const { usuario, borrarUsuario } = useUserStore();
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'stock', label: 'Estado del Local', icon: Power },
+    { id: 'clientes', label: 'Cartera VIP', icon: Users },
     { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
     { id: 'ventas', label: 'Bitácora', icon: ClipboardList },
     { id: 'finanzas', label: 'Rentabilidad', icon: Wallet },
@@ -47,17 +31,15 @@ function App() {
     { id: 'sop', label: 'Códice SOP', icon: BookOpen },
   ];
 
-  if (!isAdminRoute && !isAuthorized) {
-    return <LandingPage onAdminClick={() => setIsAdminRoute(true)} />;
-  }
-
-  if (isAdminRoute && !isAuthorized) {
-    return <AdminLogin onSuccess={handleAdminSuccess} />;
+  // Si no hay usuario logueado como Admin, mostramos la cara pública (Landing)
+  if (!usuario?.isAdmin) {
+    return <LandingPage />;
   }
 
   return (
     <div className="min-h-screen flex bg-lingote-bg text-lingote-text max-w-full overflow-x-hidden">
       
+      {/* SIDEBAR DESKTOP */}
       <aside className="no-print hidden lg:flex flex-col w-64 bg-white border-r border-lingote-accent fixed h-full z-30 shadow-sm text-left">
         <div className="p-8 border-b border-lingote-accent flex flex-col items-center gap-4 text-center">
           <img src="/logo_lingote_oficial_ligero.png" alt="Logo" className="w-20 h-20 object-contain drop-shadow-sm" />
@@ -79,11 +61,7 @@ function App() {
         </nav>
         <div className="p-4 border-t border-lingote-accent space-y-4">
           <button 
-            onClick={() => {
-              sessionStorage.removeItem('lingote_admin_auth');
-              setIsAuthorized(false);
-              setIsAdminRoute(false);
-            }}
+            onClick={() => borrarUsuario()}
             className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-red-400 hover:bg-red-50 hover:text-red-600 transition-all border border-red-50"
           >
             <X size={16} /> Cerrar Sesión
@@ -94,6 +72,7 @@ function App() {
         </div>
       </aside>
 
+      {/* HEADER MOBILE */}
       <header className="no-print lg:hidden fixed top-0 w-full h-16 bg-white/80 backdrop-blur-xl border-b border-lingote-accent flex items-center justify-between px-6 z-40">
         <div className="flex items-center gap-3">
           <img src="/logo_lingote_oficial_ligero.png" alt="Logo" className="h-10 w-10 object-contain" />
@@ -104,10 +83,10 @@ function App() {
         </button>
       </header>
 
+      {/* MOBILE MENU OVERLAY */}
       {isMenuOpen && (
         <div className="no-print lg:hidden fixed inset-0 bg-white z-30 pt-20 overflow-y-auto animate-in fade-in duration-300">
           <nav className="p-6 space-y-4 pb-20">
-
             {menuItems.map((item) => (
               <button
                 key={item.id}
@@ -125,9 +104,7 @@ function App() {
             ))}
             <button 
               onClick={() => {
-                sessionStorage.removeItem('lingote_admin_auth');
-                setIsAuthorized(false);
-                setIsAdminRoute(false);
+                borrarUsuario();
                 setIsMenuOpen(false);
               }}
               className="w-full flex items-center gap-6 px-8 py-6 rounded-[2rem] text-xl font-black text-red-500 bg-red-50 mt-12"
@@ -138,10 +115,12 @@ function App() {
         </div>
       )}
 
+      {/* CONTENIDO PRINCIPAL */}
       <main className="flex-1 lg:ml-64 p-2 md:p-8 lg:p-12 pt-20 lg:pt-12 min-h-screen max-w-full overflow-x-hidden">
         <div className="max-w-6xl mx-auto">
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'stock' && <GestionStock />}
+          {activeTab === 'clientes' && <CarteraClientes />}
           {activeTab === 'etiquetas' && <Etiquetador />}
           {activeTab === 'ventas' && <BitacoraVentas />}
           {activeTab === 'finanzas' && <Rentabilidad />}

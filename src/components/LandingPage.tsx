@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Star, Clock, Package, 
-  UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info, Plus, ChevronRight 
+  UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info, Plus, ChevronRight, UserCheck 
 } from 'lucide-react';
 import { 
   MENU_LINGOTES, 
@@ -13,18 +13,21 @@ import {
 } from '../data/menuPublico';
 import { supabase } from '../lib/supabase';
 import { useCartStore } from '../store/useCartStore';
+import { useUserStore } from '../store/useUserStore';
 import CartDrawer from './CartDrawer';
+import ModalUsuario from './ModalUsuario';
 
 interface LandingPageProps {
-  onAdminClick: () => void;
+  // Ya no se requiere onAdminClick
 }
 
-const LandingPage = ({ onAdminClick }: LandingPageProps) => {
+const LandingPage = ({ }: LandingPageProps) => {
   const [activeCategory, setActiveCategory] = useState('lingotes');
-  const [tapCount, setTapCount] = useState(0);
   const [stock, setStock] = useState<Record<string, boolean>>({});
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const { addItem, itemsCount } = useCartStore();
+  const { usuario } = useUserStore();
 
   // 1. Cargar estado inicial de stock y Suscribirse a cambios en TIEMPO REAL
   useEffect(() => {
@@ -87,16 +90,6 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
 
   const activeData = categories.find(c => c.id === activeCategory)?.data || [];
 
-  const handleSecretTap = () => {
-    const newCount = tapCount + 1;
-    setTapCount(newCount);
-    if (newCount >= 3) {
-      onAdminClick();
-      setTapCount(0);
-    }
-    setTimeout(() => setTapCount(0), 2000);
-  };
-
   const handleAddItem = (item: any) => {
     addItem(item);
     setIsCartOpen(true);
@@ -113,9 +106,9 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
         </div>
         
         <div className="relative z-10 text-center space-y-4">
-           <button onClick={handleSecretTap} className="block mx-auto active:scale-95 transition-transform">
+           <div className="block mx-auto">
              <img src="/logo_lingote_oficial_ligero.png" alt="Logo" className="w-24 h-24 mx-auto drop-shadow-2xl animate-in zoom-in duration-1000" />
-           </button>
+           </div>
            <div className="space-y-1">
              <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic leading-none">El Lingote Español</h1>
              <p className="text-lingote-gold font-bold uppercase tracking-[0.3em] text-[8px]">Artesanía Gastronómica Premium</p>
@@ -123,10 +116,15 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
         </div>
 
         <div className="absolute bottom-6 left-0 w-full px-6 flex justify-between items-center z-10">
-           <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-              <Star className="text-lingote-gold" size={12} fill="currentColor" />
-              <span className="text-white text-[9px] font-black uppercase tracking-widest italic">4.9 Estrellas</span>
-           </div>
+           <button 
+             onClick={() => setIsUserModalOpen(true)}
+             className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 active:scale-95 transition-all"
+           >
+              <UserCheck className={usuario ? "text-green-400" : "text-white"} size={14} />
+              <span className="text-white text-[10px] font-black uppercase tracking-widest italic">
+                {usuario ? `Hola, ${usuario.nombre.split(' ')[0]}` : 'Identificarse'}
+              </span>
+           </button>
            <div className={`flex items-center gap-2 backdrop-blur-md px-3 py-1.5 rounded-full border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-red-500/10 border-red-500/20'}`}>
               <Clock className={isOpen ? 'text-lingote-gold' : 'text-red-400'} size={12} />
               <span className={`text-[9px] font-black uppercase tracking-widest italic ${isOpen ? 'text-white' : 'text-red-400'}`}>
@@ -266,6 +264,15 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 
         localOpen={isOpen} 
+        onRequireUser={() => {
+          setIsCartOpen(false);
+          setIsUserModalOpen(true);
+        }}
+      />
+
+      <ModalUsuario 
+        isOpen={isUserModalOpen} 
+        onClose={() => setIsUserModalOpen(false)} 
       />
 
     </div>
