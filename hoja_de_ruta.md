@@ -22,8 +22,10 @@
 - [x] **Sincronización Cloud (Supabase):** Stock en tiempo real y Bitácora persistente en la nube.
 - [x] **UX Mobile:** Optimización de menús y scroll para gestión desde smartphone.
 
-## Fase 4: Inteligencia de Cliente y CRM (Próximamente) 🚀
-- [ ] **Cartera de Clientes:** Sincronización de perfiles de usuario con Supabase.
+## Fase 4: Inteligencia de Cliente y CRM 🚀
+- [ ] **Comunicación Directa:** Botones de WhatsApp y Email en las fichas de clientes VIP.
+- [ ] **Exportación de Datos:** Función para descargar la base de datos de clientes en formato CSV/Excel.
+- [ ] **Invitación Inteligente:** Banner de Grupo VIP en pantalla de éxito con lógica de "No mostrar si ya está unido".
 - [ ] **Programa de Lealtad:** Sistema de sellos/stamps persistentes en la nube.
 - [ ] **Dashboard VIP:** Ranking de mejores clientes y ticket promedio por persona.
 - [ ] **Simulador de Precios Dinámicos:** Jugar con el impacto de subir ₡100 o ₡200.

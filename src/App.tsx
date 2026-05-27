@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users 
+  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3 
 } from 'lucide-react';
 import Rentabilidad from './components/Rentabilidad';
 import FichasB2B from './components/FichasB2B';
@@ -12,23 +12,37 @@ import Dashboard from './components/Dashboard';
 import BitacoraVentas from './components/BitacoraVentas';
 import GestionStock from './components/GestionStock';
 import CarteraClientes from './components/CarteraClientes';
+import InventarioMaestro from './components/InventarioMaestro';
+import DirectorioProveedores from './components/DirectorioProveedores';
+import AnalisisVentas from './components/AnalisisVentas';
 import { useUserStore } from './store/useUserStore';
+import { Toaster } from 'sonner';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('lingote_active_tab') || 'dashboard';
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { usuario, borrarUsuario } = useUserStore();
+
+  // Guardar pestaña activa en localStorage
+  useEffect(() => {
+    localStorage.setItem('lingote_active_tab', activeTab);
+  }, [activeTab]);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'stock', label: 'Estado del Local', icon: Power },
-    { id: 'clientes', label: 'Cartera VIP', icon: Users },
-    { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
-    { id: 'ventas', label: 'Bitácora', icon: ClipboardList },
+    { id: 'proveedores', label: 'Proveedores', icon: Truck },
+    { id: 'insumos', label: 'Maestro Insumos', icon: Database },
     { id: 'finanzas', label: 'Rentabilidad', icon: Wallet },
     { id: 'fichas', label: 'Fichas B2B', icon: FileText },
-    { id: 'roi', label: 'Calculadora ROI', icon: TrendingUp },
     { id: 'sop', label: 'Códice SOP', icon: BookOpen },
+    { id: 'ventas', label: 'Bitácora', icon: ClipboardList },
+    { id: 'graficos', label: 'Popularidad', icon: BarChart3 },
+    { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
+    { id: 'roi', label: 'Calculadora ROI', icon: TrendingUp },
+    { id: 'clientes', label: 'Cartera VIP', icon: Users },
   ];
 
   // Si no hay usuario logueado como Admin, mostramos la cara pública (Landing)
@@ -120,9 +134,12 @@ function App() {
         <div className="max-w-6xl mx-auto">
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'stock' && <GestionStock />}
+          {activeTab === 'proveedores' && <DirectorioProveedores />}
           {activeTab === 'clientes' && <CarteraClientes />}
+          {activeTab === 'insumos' && <InventarioMaestro />}
           {activeTab === 'etiquetas' && <Etiquetador />}
           {activeTab === 'ventas' && <BitacoraVentas />}
+          {activeTab === 'graficos' && <AnalisisVentas />}
           {activeTab === 'finanzas' && <Rentabilidad />}
           {activeTab === 'fichas' && <FichasB2B />}
           {activeTab === 'roi' && <CalculadoraROI />}
@@ -130,6 +147,7 @@ function App() {
         </div>
       </main>
 
+      <Toaster position="bottom-right" expand={false} richColors />
     </div>
   );
 }

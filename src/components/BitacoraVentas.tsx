@@ -9,6 +9,7 @@ import {
   MENU_BEBIDAS, MENU_SALSAS 
 } from '../data/menuPublico';
 import { supabase } from '../lib/supabase';
+import { notify } from '../utils/notifications';
 
 interface VentaItem {
   id: string | number;
@@ -28,7 +29,6 @@ const BitacoraVentas = () => {
   const [ventasActuales, setVentasActuales] = useState<VentaItem[]>([]);
   const [historico, setHistorico] = useState<RegistroDia[]>([]);
   const [expandCategory, setExpandCategory] = useState<string | null>('lingotes');
-  const [mensajeGuardado, setMensajeGuardado] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // --- CARGA DE DATOS DESDE SUPABASE ---
@@ -103,10 +103,9 @@ const BitacoraVentas = () => {
       const nuevoHistorico = historico.filter(r => r.fecha !== fecha);
       setHistorico([nuevoRegistro, ...nuevoHistorico]);
       
-      setMensajeGuardado(true);
-      setTimeout(() => setMensajeGuardado(false), 2000);
+      notify.success("¡Cierre Guardado!", `Se ha registrado la venta de ₡${total.toLocaleString()} en la nube.`);
     } else {
-      alert("Error al guardar en la nube");
+      notify.error("Error al Guardar", "No se pudo conectar con Supabase.");
     }
   };
 
@@ -244,13 +243,9 @@ const BitacoraVentas = () => {
 
                 <button 
                   onClick={guardarRegistro}
-                  className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase italic tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 ${mensajeGuardado ? 'bg-green-600 text-white animate-in zoom-in duration-300' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+                  className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase italic tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 hover:bg-slate-800"
                 >
-                  {mensajeGuardado ? (
-                    <> <CheckCircle2 size={20} /> ¡Guardado en la Nube! </>
-                  ) : (
-                    <> <Save size={20} /> Guardar Cierre </>
-                  )}
+                  <Save size={20} /> Guardar Cierre
                 </button>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">

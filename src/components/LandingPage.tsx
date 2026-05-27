@@ -16,6 +16,7 @@ import { useCartStore } from '../store/useCartStore';
 import { useUserStore } from '../store/useUserStore';
 import CartDrawer from './CartDrawer';
 import ModalUsuario from './ModalUsuario';
+import UbicacionSeccion from './UbicacionSeccion';
 
 interface LandingPageProps {
   // Ya no se requiere onAdminClick
@@ -96,12 +97,12 @@ const LandingPage = ({ }: LandingPageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-32 animate-in fade-in duration-700 max-w-full overflow-x-hidden text-left">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-32 animate-in fade-in duration-700 w-full overflow-x-clip text-left">
       
       {/* HERO SECTION */}
-      <section className="relative h-[45vh] flex flex-col items-center justify-center p-6 overflow-hidden bg-slate-900">
+      <section className="relative h-[45vh] w-full flex flex-col items-center justify-center p-6 overflow-hidden bg-slate-900">
         <div className="absolute inset-0 opacity-40">
-           <img src="/lingote_tortilla.jpg" className="w-full h-full object-cover" alt="Hero" />
+           <img src="/bodegon.webp" className="w-full h-full object-cover" alt="Hero" />
            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
         </div>
         
@@ -230,6 +231,8 @@ const LandingPage = ({ }: LandingPageProps) => {
             })}
          </div>
       </main>
+
+      <UbicacionSeccion />
 
       {/* FOOTER */}
       <footer className="mt-12 p-8 text-center space-y-6 pb-40">

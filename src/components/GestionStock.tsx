@@ -5,6 +5,7 @@ import {
   MENU_BEBIDAS, MENU_SALSAS 
 } from '../data/menuPublico';
 import { supabase } from '../lib/supabase';
+import { notify } from '../utils/notifications';
 
 interface StockState {
   [key: string]: boolean;
@@ -59,7 +60,7 @@ const GestionStock = () => {
       console.error("Error al actualizar stock:", error);
       // Revertir si hay error
       setStock(prev => ({ ...prev, [id]: currentState }));
-      alert("Error al conectar con la nube");
+      notify.error("Error de Conexión", "No se pudo sincronizar el stock con la nube.");
     }
   };
 

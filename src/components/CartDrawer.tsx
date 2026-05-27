@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   ShoppingBag, X, Trash2, 
   CreditCard, Banknote, ShieldCheck, CheckCircle2,
-  ArrowRight, ArrowLeft
+  ArrowRight, ArrowLeft, MessageCircle
 } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useUserStore } from '../store/useUserStore';
@@ -24,7 +24,34 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
   const [pedidoEnviado, setPedidoEnviado] = useState(false);
   const [pasoComprobante, setPasoComprobante] = useState(false);
   const [currentPedidoID, setCurrentPedidoID] = useState('');
+  const [yaEsMiembro, setYaEsMiembro] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Verificar estado de grupo VIP al abrir éxito
+  useEffect(() => {
+    if (pedidoEnviado && usuario) {
+      const checkMiembro = async () => {
+        const { data } = await supabase
+          .from('clientes')
+          .select('unido_al_grupo')
+          .eq('telefono', usuario.telefono)
+          .single();
+        if (data?.unido_al_grupo) setYaEsMiembro(true);
+      };
+      checkMiembro();
+    }
+  }, [pedidoEnviado, usuario]);
+
+  const unirseAlGrupo = async () => {
+    if (!usuario) return;
+    const { error } = await supabase
+      .from('clientes')
+      .update({ unido_al_grupo: true })
+      .eq('telefono', usuario.telefono);
+    
+    if (!error) setYaEsMiembro(true);
+    window.open('https://chat.whatsapp.com/G5vXyzabc123', '_blank'); // Reemplazar con link real
+  };
 
   const enfocarComprobante = () => {
     setPasoComprobante(true);
@@ -161,9 +188,31 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
                        <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mb-1">ID de Pedido (Reserva)</p>
                        <p className="text-3xl font-black tracking-widest text-lingote-gold italic">{currentPedidoID}</p>
                     </div>
-                    <div className="bg-amber-100 border border-amber-200 text-amber-800 p-4 rounded-2xl">
-                      <p className="text-[10px] font-black uppercase italic leading-tight">Mantené esta pantalla abierta o mostrá tu WhatsApp en el local.</p>
+                  </div>
+                )}
+
+                {/* BANNER GRUPO VIP (SÓLO SI NO SE HA UNIDO) */}
+                {!yaEsMiembro && (
+                  <div className="bg-green-50 border-2 border-dashed border-green-200 p-6 rounded-[2.5rem] space-y-4 animate-in fade-in zoom-in duration-700 delay-500">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="bg-[#25D366] p-2 rounded-xl text-white shadow-lg"><MessageCircle size={18} /></div>
+                      <p className="text-xs font-black text-green-900 uppercase italic">¿Querés ser VIP?</p>
                     </div>
+                    <p className="text-[10px] text-green-800 font-bold leading-tight uppercase">
+                      Unite a nuestro grupo de WhatsApp para recibir <span className="underline">promos exclusivas</span> y noticias de cocina antes que nadie.
+                    </p>
+                    <button 
+                      onClick={unirseAlGrupo}
+                      className="w-full py-3 bg-[#25D366] text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:shadow-lg transition-all active:scale-95"
+                    >
+                      Unirse a la Comunidad 🥘
+                    </button>
+                  </div>
+                )}
+
+                {!yaEsMiembro && metodoPago === 'efectivo' && (
+                  <div className="bg-amber-100 border border-amber-200 text-amber-800 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black uppercase italic leading-tight">Mantené esta pantalla abierta o mostrá tu WhatsApp en el local.</p>
                   </div>
                 )}
              </div>

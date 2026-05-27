@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
-  TrendingUp, Wallet, AlertTriangle, 
-  CheckCircle2, ArrowUpRight, Info, Loader2
+  LayoutDashboard, TrendingUp, Wallet, AlertTriangle, 
+  CheckCircle2, ArrowUpRight, Info, Loader2, Star, MessageCircle, FileText, Download, X
 } from 'lucide-react';
+import { toPng } from 'html-to-image';
 import { supabase } from '../lib/supabase';
+import ReporteMensual from './ReporteMensual';
+
+interface Cliente {
+  nombre: string;
+  puntos_lealtad: number;
+  telefono: string;
+}
 
 interface Ingrediente {
   id: string;
@@ -37,44 +45,85 @@ interface GastosGlobales {
 const Dashboard = () => {
   const [recetas, setRecetas] = useState<EscandalloCompleto[]>([]);
   const [gastos, setGastos] = useState<GastosGlobales | null>(null);
-  const [ventasMes, setVentasMes] = useState({ unidades: 0, bruto: 0 });
+  const [ventasMes, setVentasMes] = useState({ unidades: 0, bruto: 0, pedidos: 0 });
+  const [topVentas, setTopVentas] = useState<{ nombre: string, cantidad: number }[]>([]);
+  const [clientesVIP, setClientesVIP] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showReporte, setShowReporte] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const reporteRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       
-      // 1. Cargar Recetas y Gastos (Siguen siendo locales por ahora para flexibilidad del Admin)
       const savedRecetas = localStorage.getItem('lingote_escandallos');
       const savedGastos = localStorage.getItem('lingote_gastos_globales');
       if (savedRecetas) setRecetas(JSON.parse(savedRecetas));
       if (savedGastos) setGastos(JSON.parse(savedGastos));
 
-      // 2. Cargar Ventas Reales del Mes desde SUPABASE
       const hoy = new Date();
       const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
       
-      const { data, error } = await supabase
+      const { data: ventasData } = await supabase
         .from('bitacora_ventas')
         .select('*')
         .gte('fecha', primerDiaMes);
 
-      if (!error && data) {
-        const stats = data.reduce((acc: any, r: any) => {
-          const unidadesDia = r.ventas.reduce((sum: number, v: any) => sum + v.cantidad, 0);
+      if (ventasData) {
+        const productStats: Record<string, { nombre: string, cantidad: number }> = {};
+        const stats = ventasData.reduce((acc: any, r: any) => {
+          const unidadesDia = r.ventas.reduce((sum: number, v: any) => {
+            if (!productStats[v.id]) productStats[v.id] = { nombre: v.nombre, cantidad: 0 };
+            productStats[v.id].cantidad += v.cantidad;
+            return sum + v.cantidad;
+          }, 0);
           return {
             unidades: acc.unidades + unidadesDia,
-            bruto: acc.bruto + r.total_bruto
+            bruto: acc.bruto + r.total_bruto,
+            pedidos: acc.pedidos + 1
           };
-        }, { unidades: 0, bruto: 0 });
+        }, { unidades: 0, bruto: 0, pedidos: 0 });
         
         setVentasMes(stats);
+        setTopVentas(Object.values(productStats).sort((a, b) => b.cantidad - a.cantidad).slice(0, 5));
       }
+
+      const { data: clientesData } = await supabase
+        .from('clientes')
+        .select('nombre, puntos_lealtad, telefono')
+        .order('puntos_lealtad', { ascending: false })
+        .limit(5);
+      
+      if (clientesData) setClientesVIP(clientesData);
+
       setLoading(false);
     };
 
     fetchData();
   }, []);
+
+  const descargarInforme = async () => {
+    if (reporteRef.current) {
+      const dataUrl = await toPng(reporteRef.current, { 
+        cacheBust: true, 
+        pixelRatio: 2,
+        width: 794,
+        height: 1123,
+        style: { transform: 'none' }
+      });
+      const link = document.createElement('a');
+      link.download = `Reporte-Lingote-${new Date().toLocaleDateString('es-CR')}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+  };
 
   // --- LÓGICA DE INTELIGENCIA ---
   
@@ -121,6 +170,11 @@ const Dashboard = () => {
   const breakevenUnidades = contribucionPromedio > 0 ? Math.ceil(totalGastosFijos / contribucionPromedio) : 0;
   const topRentables = [...productosAnalizados].sort((a, b) => b.utilidad - a.utilidad).slice(0, 3);
 
+  // Cálculos de Escalado A4
+  const isMobile = windowWidth < 768;
+  const scaleFactor = isMobile ? Math.min(0.48, (windowWidth - 40) / 794) : 1;
+  const utilidadNetaReal = (contribucionPromedio * ventasMes.unidades) - totalGastosFijos;
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-40 text-slate-300 gap-4">
@@ -133,6 +187,20 @@ const Dashboard = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-20 text-left">
       
+      {/* HEADER DASHBOARD */}
+      <div className="flex justify-between items-center px-1 mb-2">
+         <div className="flex items-center gap-3">
+            <div className="bg-slate-900 p-2 rounded-xl text-lingote-gold shadow-lg"><LayoutDashboard size={20} /></div>
+            <h2 className="text-xl font-black uppercase tracking-tighter italic text-slate-800">Panel de Control</h2>
+         </div>
+         <button 
+           onClick={() => setShowReporte(true)}
+           className="flex items-center gap-2 px-6 py-3 bg-lingote-gold text-slate-900 rounded-2xl font-black text-[10px] uppercase shadow-2xl active:scale-95 transition-all italic border border-white/20"
+         >
+            <FileText size={14} /> Descargar Informe
+         </button>
+      </div>
+
       {/* PROGRESO REAL CLOUD */}
       <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-xl relative overflow-hidden">
          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
@@ -189,8 +257,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-sm space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-sm space-y-6">
            <div className="flex items-center gap-3">
               <div className="bg-slate-900 p-2 rounded-xl text-lingote-gold"><ArrowUpRight size={18} /></div>
               <h4 className="text-lg font-black uppercase tracking-tighter italic">Top 3 Rentabilidad</h4>
@@ -199,9 +267,9 @@ const Dashboard = () => {
               {topRentables.length === 0 ? (
                 <p className="text-[10px] text-slate-300 italic uppercase py-10 text-center">No hay datos suficientes</p>
               ) : topRentables.map((prod, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-lingote-gold/30 transition-all">
+                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-lingote-gold/30 transition-all group">
                    <div className="flex items-center gap-4">
-                      <span className="text-2xl font-black text-slate-200">#{i+1}</span>
+                      <span className="text-2xl font-black text-slate-200 group-hover:text-lingote-gold transition-colors">#{i+1}</span>
                       <div>
                          <p className="font-black text-slate-800 uppercase text-xs italic leading-none">{prod.nombre}</p>
                          <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">Utilidad: ₡{Math.round(prod.utilidad).toLocaleString()}</p>
@@ -215,6 +283,47 @@ const Dashboard = () => {
            </div>
         </div>
 
+        <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-sm space-y-6">
+           <div className="flex items-center gap-3">
+              <div className="bg-slate-900 p-2 rounded-xl text-lingote-gold"><Star size={18} fill="currentColor" /></div>
+              <h4 className="text-lg font-black uppercase tracking-tighter italic">Clientes VIP</h4>
+           </div>
+           <div className="space-y-4">
+              {clientesVIP.length === 0 ? (
+                <p className="text-[10px] text-slate-300 italic uppercase py-10 text-center">Sin clientes registrados</p>
+              ) : clientesVIP.map((cliente, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-white hover:border-lingote-gold/30 transition-all group">
+                   <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-lingote-gold text-slate-900' : 'bg-white text-slate-400 border border-slate-100'}`}>
+                        {i + 1}
+                      </div>
+                      <div className="min-w-0">
+                         <p className="font-black text-slate-800 uppercase text-[10px] italic leading-none truncate">{cliente.nombre}</p>
+                         <div className="flex items-center gap-1 mt-1">
+                            <span className="text-[10px] font-black text-slate-400">{cliente.puntos_lealtad}</span>
+                            <Star size={8} className="text-lingote-gold" fill="currentColor" />
+                         </div>
+                      </div>
+                   </div>
+                   <a 
+                     href={`https://wa.me/${cliente.telefono.replace(/\D/g, '')}`} 
+                     target="_blank"
+                     className="p-3 bg-[#25D366]/10 text-[#25D366] rounded-xl hover:bg-[#25D366] hover:text-white transition-all shadow-sm"
+                   >
+                     <MessageCircle size={14} />
+                   </a>
+                </div>
+              ))}
+           </div>
+           {clientesVIP.length > 0 && (
+              <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest text-center mt-2 italic">
+                Sincronizado con Cartera Cloud
+              </p>
+           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-sm space-y-6">
            <div className="flex items-center gap-3">
               <div className="bg-amber-100 p-2 rounded-xl text-amber-600"><AlertTriangle size={18} /></div>
@@ -239,21 +348,67 @@ const Dashboard = () => {
               </div>
            </div>
         </div>
+
+        <div className="bg-lingote-text p-6 rounded-[2rem] text-white flex flex-col justify-center items-center gap-4 shadow-lg border border-white/5">
+           <div className="text-center">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 leading-none mb-1">Tu Meta Mensual</p>
+              <p className="text-xl font-black tracking-tighter italic text-lingote-gold uppercase leading-none">Vender {gastos?.metaVentasMensual || 0} Unidades</p>
+           </div>
+           <div className="h-px w-full bg-white/10 my-2"></div>
+           <div className="text-center">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 leading-none mb-1">Tu Utilidad Mensual Proyectada</p>
+              <p className="text-xl font-black tracking-tighter italic text-green-400 uppercase leading-none">
+                + ₡{Math.round(utilidadPromedio * (gastos?.metaVentasMensual || 0)).toLocaleString()}
+              </p>
+           </div>
+        </div>
       </div>
 
-      <div className="bg-lingote-text p-6 rounded-[2rem] text-white flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg border border-white/5">
-         <div className="text-center md:text-left">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 leading-none mb-1">Tu Meta Mensual</p>
-            <p className="text-xl font-black tracking-tighter italic text-lingote-gold uppercase leading-none">Vender {gastos?.metaVentasMensual || 0} Unidades</p>
-         </div>
-         <div className="h-px w-full md:h-10 md:w-px bg-white/10"></div>
-         <div className="text-center md:text-right">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 leading-none mb-1">Tu Utilidad Mensual Proyectada</p>
-            <p className="text-xl font-black tracking-tighter italic text-green-400 uppercase leading-none">
-              + ₡{Math.round(utilidadPromedio * (gastos?.metaVentasMensual || 0)).toLocaleString()}
-            </p>
-         </div>
-      </div>
+      {/* MODAL REPORTE PREVIEW */}
+      {showReporte && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 md:p-10 animate-in fade-in duration-500 no-print">
+          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-2xl" onClick={() => setShowReporte(false)} />
+          <div className="relative w-full max-w-5xl h-full flex flex-col items-center gap-6 animate-in zoom-in duration-500 overflow-y-auto p-6 scrollbar-hide">
+            <div className="flex gap-4 sticky top-0 z-10 w-full justify-center">
+              <button 
+                onClick={descargarInforme} 
+                className="flex-1 max-w-xs flex items-center justify-center gap-3 px-8 py-5 bg-lingote-gold text-slate-900 rounded-2xl font-black text-xs uppercase shadow-2xl active:scale-95 transition-all italic"
+              >
+                <Download size={20} /> Guardar Informe
+              </button>
+              <button 
+                onClick={() => setShowReporte(false)} 
+                className="w-16 h-16 flex items-center justify-center bg-white/10 text-white rounded-2xl hover:bg-white/20 transition-all backdrop-blur-xl border border-white/10"
+              >
+                <X size={32} />
+              </button>
+            </div>
+            
+            <div 
+              className="w-full flex justify-center py-10"
+              style={{ height: isMobile ? (1123 * scaleFactor) + 100 : 'auto' }}
+            >
+          <ReporteMensual 
+            ref={reporteRef}
+            mes={new Date().toLocaleDateString('es-CR', { month: 'long', year: 'numeric' }).toUpperCase()}
+            resumen={{
+              ventaBruta: ventasMes.bruto,
+              gastosFijos: totalGastosFijos,
+              utilidadNeta: Math.round(utilidadNetaReal),
+              totalPedidos: ventasMes.pedidos
+            }}
+            topProductos={topVentas}
+            clienteVIP={clientesVIP[0] ? { nombre: clientesVIP[0].nombre, puntos: clientesVIP[0].puntos_lealtad } : { nombre: "Sin Clientes", puntos: 0 }}
+            style={{ 
+              transform: isMobile ? `scale(${scaleFactor})` : 'none',
+              transformOrigin: 'top center',
+              flexShrink: 0
+            }}
+          />
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

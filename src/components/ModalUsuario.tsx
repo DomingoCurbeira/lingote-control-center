@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Smartphone, User, ChevronRight, X, Loader2, Mail, CheckCircle2, Lock } from 'lucide-react';
+import { Smartphone, User, ChevronRight, X, Loader2, Mail, CheckCircle2, Lock, LogOut } from 'lucide-react';
 import { useUserStore } from '../store/useUserStore';
 import { supabase } from '../lib/supabase';
+import { notify } from '../utils/notifications';
+import StampCard from './StampCard';
 
 interface Props {
   isOpen: boolean;
@@ -10,10 +12,11 @@ interface Props {
 }
 
 const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
-  const { usuario, setUsuario } = useUserStore();
+  const { usuario, setUsuario, borrarUsuario } = useUserStore();
   const [email, setEmail] = useState(usuario?.email || '');
   const [nombre, setNombre] = useState(usuario?.nombre || '');
   const [telefono, setTelefono] = useState(usuario?.telefono || '');
+  const [puntos, setPuntos] = useState(0);
   const [password, setPassword] = useState('');
   
   const [loading, setLoading] = useState(false);
@@ -29,6 +32,19 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
       setTelefono(usuario?.telefono || '');
       setEsNuevo(!usuario);
       setMensajeExito('');
+
+      // Cargar puntos si ya existe usuario
+      if (usuario) {
+        const fetchPuntos = async () => {
+          const { data } = await supabase
+            .from('clientes')
+            .select('puntos_lealtad')
+            .eq('email', usuario.email.toLowerCase())
+            .single();
+          if (data) setPuntos(data.puntos_lealtad);
+        };
+        fetchPuntos();
+      }
     }
   }, [isOpen, usuario]);
 
@@ -57,10 +73,9 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
       setNombre(data.nombre);
       setTelefono(data.telefono);
       setEsNuevo(false);
-      setMensajeExito(`¡Bienvenido de nuevo, ${data.nombre.split(' ')[0]}!`);
+      notify.success(`¡Bienvenido de nuevo, ${data.nombre.split(' ')[0]}!`, "Tus datos han sido cargados automáticamente.");
     } else {
       setEsNuevo(true);
-      setMensajeExito('');
     }
     setBuscando(false);
   };
@@ -77,7 +92,7 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
       });
 
       if (authError) {
-        alert(`Error de Acceso: ${authError.message}`);
+        notify.alertError("Error de Acceso", authError.message);
         setLoading(false);
         return;
       }
@@ -130,12 +145,18 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
               <img src="/logo_lingote_oficial_ligero.png" alt="Logo" className="w-14 h-14 object-contain" />
             </div>
             <h3 className="text-2xl font-black italic text-slate-800 uppercase tracking-tighter leading-none">
-              {mostrarPassword ? 'Acceso' : 'Hola,'} <span className="text-lingote-gold">{mostrarPassword ? 'Admin' : 'Bienvenido!'}</span>
+              {usuario ? 'Tu Perfil' : mostrarPassword ? 'Acceso' : 'Hola,'} <span className="text-lingote-gold">{usuario ? 'VIP' : mostrarPassword ? 'Admin' : 'Bienvenido!'}</span>
             </h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">
-              {mostrarPassword ? 'Introduce tus credenciales' : 'Identifícate para tu pedido'}
+              {usuario ? 'Gestioná tus puntos y datos' : mostrarPassword ? 'Introduce tus credenciales' : 'Identifícate para tu pedido'}
             </p>
           </div>
+
+          {usuario && !usuario.isAdmin && (
+             <div className="mb-8 animate-in zoom-in duration-500">
+                <StampCard puntos={puntos} />
+             </div>
+          )}
 
           {mensajeExito && (
             <div className="mb-6 bg-green-50 text-green-600 p-3 rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2 duration-300">
@@ -145,36 +166,39 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
           )}
 
           <form onSubmit={handleGuardar} className="space-y-4">
-            {/* EMAIL (SIEMPRE PRIMERO) */}
+            {/* EMAIL (BLOQUEADO SI YA EXISTE) */}
             <div className="relative">
               <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               <input 
                 required
+                disabled={!!usuario}
                 type="email" 
                 placeholder="TU EMAIL"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={handleEmailBlur}
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-10 font-black text-xs outline-none focus:border-lingote-gold transition-all placeholder:text-slate-200"
+                className={`w-full border-2 rounded-2xl py-4 pl-14 pr-10 font-black text-xs outline-none transition-all ${usuario ? 'bg-slate-100 border-slate-100 text-slate-400' : 'bg-slate-50 border-slate-100 focus:border-lingote-gold text-slate-700'}`}
               />
               {buscando && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-lingote-gold animate-spin" size={16} />}
             </div>
 
             {mostrarPassword ? (
-              /* CAMPO PASSWORD PARA ADMIN */
-              <div className="relative animate-in slide-in-from-bottom-2">
-                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                <input 
-                  required
-                  type="password" 
-                  placeholder="CONTRASEÑA"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-4 font-black text-xs outline-none focus:border-lingote-gold transition-all"
-                />
-              </div>
+              /* CAMPO PASSWORD PARA ADMIN (SI NO ESTÁ LOGUEADO) */
+              !usuario && (
+                <div className="relative animate-in slide-in-from-bottom-2">
+                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  <input 
+                    required
+                    type="password" 
+                    placeholder="CONTRASEÑA"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-14 pr-4 font-black text-xs outline-none focus:border-lingote-gold transition-all"
+                  />
+                </div>
+              )
             ) : (
-              /* CAMPOS NOMBRE Y TELÉFONO PARA CLIENTES */
+              /* CAMPOS NOMBRE Y TELÉFONO */
               <div className="space-y-4 animate-in fade-in duration-500">
                 <div className="relative">
                   <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
@@ -210,17 +234,30 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
               {loading ? (
                 <Loader2 className="animate-spin" size={18} />
               ) : (
-                <>{mostrarPassword ? 'Iniciar Sesión' : esNuevo ? 'Registrarme' : 'Confirmar Datos'} <ChevronRight size={18} /></>
+                <>{usuario ? 'Actualizar Perfil' : mostrarPassword ? 'Iniciar Sesión' : esNuevo ? 'Registrarme' : 'Confirmar Datos'} <ChevronRight size={18} /></>
               )}
             </button>
           </form>
           
-          <button 
-            onClick={onClose}
-            className="w-full mt-8 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] hover:text-slate-400 transition-colors italic"
-          >
-            Tal vez luego
-          </button>
+          <div className="mt-8 flex flex-col items-center gap-4">
+            {usuario && (
+              <button 
+                onClick={() => {
+                  borrarUsuario();
+                  onClose();
+                }}
+                className="flex items-center gap-2 text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-500 transition-colors italic"
+              >
+                <LogOut size={12} /> Cerrar Sesión en este equipo
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] hover:text-slate-400 transition-colors italic"
+            >
+              Cerrar Ventana
+            </button>
+          </div>
         </div>
       </div>
     </div>
