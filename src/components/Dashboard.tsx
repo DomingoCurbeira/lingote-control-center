@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { 
   TrendingUp, Wallet, AlertTriangle, 
-  CheckCircle2, ArrowUpRight, Info
+  CheckCircle2, ArrowUpRight, Info, Loader2
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface Ingrediente {
   id: string;
@@ -37,44 +38,51 @@ const Dashboard = () => {
   const [recetas, setRecetas] = useState<EscandalloCompleto[]>([]);
   const [gastos, setGastos] = useState<GastosGlobales | null>(null);
   const [ventasMes, setVentasMes] = useState({ unidades: 0, bruto: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem('lingote_escandallos');
-    const savedGastos = localStorage.getItem('lingote_gastos_globales');
-    const savedVentas = localStorage.getItem('lingote_bitacora_ventas');
-    
-    if (saved) setRecetas(JSON.parse(saved));
-    if (savedGastos) setGastos(JSON.parse(savedGastos));
-    
-    if (savedVentas) {
-      const historico = JSON.parse(savedVentas);
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // 1. Cargar Recetas y Gastos (Siguen siendo locales por ahora para flexibilidad del Admin)
+      const savedRecetas = localStorage.getItem('lingote_escandallos');
+      const savedGastos = localStorage.getItem('lingote_gastos_globales');
+      if (savedRecetas) setRecetas(JSON.parse(savedRecetas));
+      if (savedGastos) setGastos(JSON.parse(savedGastos));
+
+      // 2. Cargar Ventas Reales del Mes desde SUPABASE
       const hoy = new Date();
-      const esteMes = historico.filter((r: any) => {
-        const fechaVenta = new Date(r.fecha);
-        return fechaVenta.getMonth() === hoy.getMonth() && fechaVenta.getFullYear() === hoy.getFullYear();
-      });
+      const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
       
-      const stats = esteMes.reduce((acc: any, r: any) => {
-        const unidadesDia = r.ventas.reduce((sum: number, v: any) => sum + v.cantidad, 0);
-        return {
-          unidades: acc.unidades + unidadesDia,
-          bruto: acc.bruto + r.totalBruto
-        };
-      }, { unidades: 0, bruto: 0 });
-      
-      setVentasMes(stats);
-    }
+      const { data, error } = await supabase
+        .from('bitacora_ventas')
+        .select('*')
+        .gte('fecha', primerDiaMes);
+
+      if (!error && data) {
+        const stats = data.reduce((acc: any, r: any) => {
+          const unidadesDia = r.ventas.reduce((sum: number, v: any) => sum + v.cantidad, 0);
+          return {
+            unidades: acc.unidades + unidadesDia,
+            bruto: acc.bruto + r.total_bruto
+          };
+        }, { unidades: 0, bruto: 0 });
+        
+        setVentasMes(stats);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
   }, []);
 
   // --- LÓGICA DE INTELIGENCIA ---
   
-  // 1. Gastos Fijos Totales
   const totalGastosFijos = gastos ? (
     gastos.alquiler + gastos.luz + gastos.agua + gastos.gas + 
     gastos.internet + gastos.impuestos + gastos.seguros + gastos.salarioPropietario
   ) : 0;
 
-  // 2. Cálculo de métricas por producto (INCLUYENDO GASTOS FIJOS)
   const productosAnalizados = recetas.map(r => {
     const cuotaOpUnidad = totalGastosFijos / Math.max(1, gastos?.metaVentasMensual || 1);
     
@@ -89,9 +97,6 @@ const Dashboard = () => {
     const divisorMargen = (100 - r.margenObjetivo) / 100;
     const pvp = divisorMargen > 0 ? (costoUnidad / divisorMargen) : 0;
     const utilidadUnidad = pvp - costoUnidad;
-
-    // Margen de Contribución: Lo que cada lingote aporta para pagar Alquiler + Tu Sueldo
-    // Se calcula restando solo los ingredientes y el empaque del PVP
     const costoVariableUnidad = (costoInsumos + r.packaging) / r.porciones;
     const margenContribucion = pvp - costoVariableUnidad;
 
@@ -105,8 +110,6 @@ const Dashboard = () => {
     };
   }).filter(p => p.pvp > 0);
 
-  // 3. Punto de Equilibrio (Breakeven) REAL
-  // ¿Cuántas unidades de "Margen de Contribución" promedio necesito para pagar el total de gastos fijos?
   const utilidadPromedio = productosAnalizados.length > 0 
     ? productosAnalizados.reduce((sum, p) => sum + p.utilidad, 0) / productosAnalizados.length 
     : 0;
@@ -116,25 +119,31 @@ const Dashboard = () => {
     : 0;
   
   const breakevenUnidades = contribucionPromedio > 0 ? Math.ceil(totalGastosFijos / contribucionPromedio) : 0;
-
-  // 4. Rankings
   const topRentables = [...productosAnalizados].sort((a, b) => b.utilidad - a.utilidad).slice(0, 3);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 text-slate-300 gap-4">
+         <Loader2 className="animate-spin" size={64} />
+         <p className="font-black uppercase tracking-widest text-xs italic">Sincronizando con la nube...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-20 text-left">
       
-      {/* SECCIÓN DE PROGRESO REAL (BITÁCORA) */}
+      {/* PROGRESO REAL CLOUD */}
       <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-xl relative overflow-hidden">
          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
             <div className="flex-1 w-full space-y-4">
                <div>
-                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-400 italic">Rendimiento Real • Mayo 2026</h4>
+                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-400 italic">Rendimiento Real Cloud • Mayo 2026</h4>
                   <div className="flex items-end gap-3 mt-2">
                      <h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-none italic">{ventasMes.unidades}</h2>
                      <p className="text-xs font-bold text-slate-400 uppercase mb-1">Unidades vendidas de {gastos?.metaVentasMensual || 0} (Meta)</p>
                   </div>
                </div>
-               {/* BARRA DE PROGRESO */}
                <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                   <div 
                     className="h-full bg-slate-900 transition-all duration-1000 ease-out"
@@ -143,13 +152,13 @@ const Dashboard = () => {
                </div>
             </div>
             <div className="bg-slate-900 p-6 rounded-3xl text-white text-center min-w-[200px] shadow-2xl border border-white/10">
-               <p className="text-[10px] font-black uppercase text-lingote-gold tracking-widest mb-1 italic">Ingreso Bruto Mes</p>
+               <p className="text-[10px] font-black uppercase text-lingote-gold tracking-widest mb-1 italic">Venta Acumulada Mes</p>
                <h3 className="text-3xl font-black tracking-tighter italic leading-none">₡{ventasMes.bruto.toLocaleString()}</h3>
             </div>
          </div>
       </div>
 
-      {/* 1. KPIS PRINCIPALES */}
+      {/* KPIS PRINCIPALES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group border border-white/5">
            <div className="relative z-10">
@@ -181,14 +190,11 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* RANKING DE RENTABILIDAD */}
         <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-sm space-y-6">
            <div className="flex items-center gap-3">
               <div className="bg-slate-900 p-2 rounded-xl text-lingote-gold"><ArrowUpRight size={18} /></div>
               <h4 className="text-lg font-black uppercase tracking-tighter italic">Top 3 Rentabilidad</h4>
            </div>
-           
            <div className="space-y-4">
               {topRentables.length === 0 ? (
                 <p className="text-[10px] text-slate-300 italic uppercase py-10 text-center">No hay datos suficientes</p>
@@ -209,25 +215,22 @@ const Dashboard = () => {
            </div>
         </div>
 
-        {/* ALERTA DE COSTOS / MERMAS */}
         <div className="bg-white p-6 md:p-10 rounded-[2.5rem] border border-lingote-accent shadow-sm space-y-6">
            <div className="flex items-center gap-3">
               <div className="bg-amber-100 p-2 rounded-xl text-amber-600"><AlertTriangle size={18} /></div>
               <h4 className="text-lg font-black uppercase tracking-tighter italic text-amber-600">Alerta de Operación</h4>
            </div>
-
            <div className="bg-amber-50 p-6 rounded-[2rem] border border-amber-100 space-y-4 relative overflow-hidden">
               <div className="relative z-10 space-y-2">
                  <p className="text-[11px] font-bold text-amber-800 leading-relaxed uppercase italic">
-                    Para cubrir tus gastos fijos (₡{totalGastosFijos.toLocaleString()}) necesitas vender al menos <span className="font-black text-lg underline">{breakevenUnidades} lingotes</span> mensuales con el margen actual.
+                    Para cubrir tus gastos fijos (₡{totalGastosFijos.toLocaleString()}) necesitas vender al menos <span className="font-black text-lg underline">{breakevenUnidades} lingotes</span> mensuales.
                  </p>
                  <div className="flex items-center gap-2 pt-2">
                     <Info size={14} className="text-amber-400" />
-                    <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest leading-none">Dato basado en utilidad promedio por unidad</p>
+                    <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest leading-none">Cálculo real basado en margen de contribución</p>
                  </div>
               </div>
            </div>
-
            <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
               <p className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest italic">Costo de Insumos Activos</p>
               <div className="flex items-end gap-2">
@@ -236,10 +239,8 @@ const Dashboard = () => {
               </div>
            </div>
         </div>
-
       </div>
 
-      {/* FOOTER ESTRATÉGICO */}
       <div className="bg-lingote-text p-6 rounded-[2rem] text-white flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg border border-white/5">
          <div className="text-center md:text-left">
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 leading-none mb-1">Tu Meta Mensual</p>

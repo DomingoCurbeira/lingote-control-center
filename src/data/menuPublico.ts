@@ -9,6 +9,7 @@ export interface ProductoMenu {
   disponible: boolean;
   personalizable?: boolean;
   ingredientesBase?: string[];
+  formatoRetail?: boolean;
 }
 
 export interface Promocion extends ProductoMenu {
@@ -199,7 +200,41 @@ export const MENU_BEBIDAS: ProductoMenu[] = [
   },
 ];
 
+export interface Horario {
+  abierto: string; // HH:mm
+  cerrado: string; // HH:mm
+  cerradoTodoElDia: boolean;
+}
+
+export const HORARIO_LOCAL: Record<string, Horario> = {
+  lunes: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
+  martes: { abierto: "10:00", cerrado: "20:00", cerradoTodoElDia: false },
+  miercoles: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
+  jueves: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
+  viernes: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
+  sabado: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
+  domingo: { abierto: "10:00", cerrado: "18:00", cerradoTodoElDia: true },
+};
+
 export const MENU_SALSAS: ProductoMenu[] = [
+  { 
+    id: "sal-240-chipotle", 
+    nombre: "Alioli Chipotle Asado (240ml)", 
+    precio: 3500, 
+    desc: "Frasco gourmet para llevar. Nuestra receta de autor con chipotle asado y balsámico.", 
+    disponible: true,
+    imagen: 'caribenha.webp',
+    formatoRetail: true
+  },
+  { 
+    id: "sal-240-caribena", 
+    nombre: "Salsa Caribeña (240ml)", 
+    precio: 3500, 
+    desc: "Frasco gourmet para llevar. El balance perfecto entre coco y chile panameño.", 
+    disponible: true,
+    imagen: 'chipotle.webp',
+    formatoRetail: true
+  },
   { 
     id: "sal-54", 
     nombre: "Natilla Cremosa", 

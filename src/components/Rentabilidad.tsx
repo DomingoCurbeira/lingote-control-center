@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Calculator, Image as ImageIcon, 
-  Plus, Trash2, Download, Save, CheckCircle2, X
+  Plus, Trash2, Download, Save, CheckCircle2, X, Database
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { MASTER_DATABASE } from '../data/masterDatabase';
 
 // --- INTERFACES ---
 interface Ingrediente {
@@ -110,6 +111,46 @@ const Rentabilidad = () => {
     actualizarReceta({ ingredientes: nuevos });
   };
 
+  const importarDesdeMaestro = () => {
+    const confirmacion = window.confirm("¿Deseas cargar los productos del Catálogo Maestro? (No borrará tus recetas actuales)");
+    if (!confirmacion) return;
+
+    const nuevasRecetas: EscandalloCompleto[] = MASTER_DATABASE
+      .filter(p => p.categoria !== 'insumos') // Evitar cargar materias primas puras como recetas
+      .map(p => ({
+        id: p.id,
+        nombre: p.nombre,
+        categoria: p.categoria,
+        porciones: 1, // Valor por defecto
+        packaging: p.escandallo.costoPackaging,
+        margenObjetivo: 65,
+        esProductoFinal: !['salsas', 'insumos'].includes(p.categoria),
+        imagen: p.imagen.startsWith('data:') ? p.imagen : undefined,
+        ingredientes: [
+          { id: '1', nombre: 'Materia Prima Base', precioCompra: p.escandallo.costoInsumos, cantidadReceta: 1000, merma: p.escandallo.mermaPorcentaje }
+        ]
+      }));
+
+    // Evitar duplicados por ID
+    setRecetas(prev => {
+      const idsExistentes = new Set(prev.map(r => r.id));
+      const unicas = nuevasRecetas.filter(r => !idsExistentes.has(r.id));
+      return [...prev, ...unicas];
+    });
+    
+    alert("✅ Catálogo Maestro integrado correctamente");
+  };
+
+  const limpiarMaestro = () => {
+    const confirmacion = window.confirm("¿Deseas quitar todos los productos del Catálogo Maestro? (Solo se mantendrán tus recetas manuales)");
+    if (!confirmacion) return;
+
+    const idsMaestros = new Set(MASTER_DATABASE.map(p => p.id));
+    setRecetas(prev => prev.filter(r => !idsMaestros.has(r.id)));
+    setActiveId(null);
+    alert("🗑️ Productos del Maestro eliminados");
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -212,6 +253,21 @@ const Rentabilidad = () => {
                  <button onClick={exportarDatos} className="w-full py-2 rounded-xl border border-lingote-accent text-[9px] font-black uppercase tracking-widest text-slate-400">Backup</button>
                  <label className="w-full py-2 rounded-xl border border-lingote-accent text-[9px] font-black uppercase tracking-widest text-slate-400 cursor-pointer text-center">Cargar<input type="file" className="hidden" accept=".json" onChange={importarDatos} /></label>
                </div>
+             <div className="grid grid-cols-2 gap-2">
+               <button 
+                 onClick={importarDesdeMaestro}
+                 className="flex items-center justify-center gap-2 py-2 rounded-xl border border-lingote-gold/30 text-[9px] font-black uppercase tracking-widest text-lingote-gold hover:bg-lingote-gold hover:text-white transition-all"
+               >
+                 <Database size={10} /> Cargar Maestro
+               </button>
+               <button 
+                 onClick={limpiarMaestro}
+                 className="flex items-center justify-center gap-2 py-2 rounded-xl border border-red-100 text-[9px] font-black uppercase tracking-widest text-red-300 hover:bg-red-50 hover:text-red-500 transition-all"
+               >
+                 <Trash2 size={10} /> Quitar Maestro
+               </button>
+             </div>
+
             </div>
           </div>
         </aside>

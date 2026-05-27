@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Star, Clock, Package, 
-  UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info 
+  UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info, Plus, ChevronRight 
 } from 'lucide-react';
 import { 
   MENU_LINGOTES, 
   MENU_PROMOCIONES, 
   MENU_BEBIDAS, 
   MENU_POSTRES, 
-  MENU_SALSAS
+  MENU_SALSAS,
+  HORARIO_LOCAL
 } from '../data/menuPublico';
+import { supabase } from '../lib/supabase';
+import { useCartStore } from '../store/useCartStore';
+import CartDrawer from './CartDrawer';
 
 interface LandingPageProps {
   onAdminClick: () => void;
@@ -18,6 +22,60 @@ interface LandingPageProps {
 const LandingPage = ({ onAdminClick }: LandingPageProps) => {
   const [activeCategory, setActiveCategory] = useState('lingotes');
   const [tapCount, setTapCount] = useState(0);
+  const [stock, setStock] = useState<Record<string, boolean>>({});
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { addItem, itemsCount } = useCartStore();
+
+  // 1. Cargar estado inicial de stock y Suscribirse a cambios en TIEMPO REAL
+  useEffect(() => {
+    const fetchInitialStock = async () => {
+      const { data, error } = await supabase
+        .from('disponibilidad')
+        .select('id, is_available');
+      
+      if (!error && data) {
+        const state: Record<string, boolean> = {};
+        data.forEach(row => state[row.id] = row.is_available);
+        setStock(state);
+      }
+    };
+
+    fetchInitialStock();
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'disponibilidad' },
+        (payload) => {
+          const { id, is_available } = payload.new as any;
+          setStock(prev => ({ ...prev, [id]: is_available }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Lógica de Horario Dinámico
+  const checkStatus = () => {
+    const ahora = new Date();
+    const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const diaHoy = dias[ahora.getDay()];
+    const h = HORARIO_LOCAL[diaHoy];
+
+    if (h.cerradoTodoElDia) return false;
+
+    const [ha, ma] = h.abierto.split(':').map(Number);
+    const [hc, mc] = h.cerrado.split(':').map(Number);
+    const minAhora = ahora.getHours() * 60 + ahora.getMinutes();
+    
+    return minAhora >= (ha * 60 + ma) && minAhora < (hc * 60 + mc);
+  };
+
+  const isOpen = checkStatus();
 
   const categories = [
     { id: 'lingotes', label: 'Lingotes', icon: UtensilsCrossed, data: MENU_LINGOTES },
@@ -29,7 +87,6 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
 
   const activeData = categories.find(c => c.id === activeCategory)?.data || [];
 
-  // Función secreta para activar admin (Triple Tap en el logo)
   const handleSecretTap = () => {
     const newCount = tapCount + 1;
     setTapCount(newCount);
@@ -37,7 +94,12 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
       onAdminClick();
       setTapCount(0);
     }
-    setTimeout(() => setTapCount(0), 2000); // Reset si no completa los 3 taps rápido
+    setTimeout(() => setTapCount(0), 2000);
+  };
+
+  const handleAddItem = (item: any) => {
+    addItem(item);
+    setIsCartOpen(true);
   };
 
   return (
@@ -51,13 +113,12 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
         </div>
         
         <div className="relative z-10 text-center space-y-4">
-           {/* BOTÓN SECRETO EN EL LOGO */}
            <button onClick={handleSecretTap} className="block mx-auto active:scale-95 transition-transform">
              <img src="/logo_lingote_oficial_ligero.png" alt="Logo" className="w-24 h-24 mx-auto drop-shadow-2xl animate-in zoom-in duration-1000" />
            </button>
            <div className="space-y-1">
              <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic leading-none">El Lingote Español</h1>
-             <p className="text-lingote-gold font-bold uppercase tracking-[0.3em] text-[8px]">Raíces Españolas, Corazón Tico</p>
+             <p className="text-lingote-gold font-bold uppercase tracking-[0.3em] text-[8px]">Artesanía Gastronómica Premium</p>
            </div>
         </div>
 
@@ -66,14 +127,16 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
               <Star className="text-lingote-gold" size={12} fill="currentColor" />
               <span className="text-white text-[9px] font-black uppercase tracking-widest italic">4.9 Estrellas</span>
            </div>
-           <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-              <Clock className="text-lingote-gold" size={12} />
-              <span className="text-white text-[9px] font-black uppercase tracking-widest italic">Abierto</span>
+           <div className={`flex items-center gap-2 backdrop-blur-md px-3 py-1.5 rounded-full border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-red-500/10 border-red-500/20'}`}>
+              <Clock className={isOpen ? 'text-lingote-gold' : 'text-red-400'} size={12} />
+              <span className={`text-[9px] font-black uppercase tracking-widest italic ${isOpen ? 'text-white' : 'text-red-400'}`}>
+                {isOpen ? 'Abierto' : 'Cerrado'}
+              </span>
            </div>
         </div>
       </section>
 
-      {/* CATEGORY SELECTOR (OPTIMIZADO PARA NO SCROLL EN MÓVIL) */}
+      {/* CATEGORY SELECTOR */}
       <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-100 px-2 py-3 no-print">
          <div className="grid grid-cols-5 gap-1 max-w-lg mx-auto">
             {categories.map((cat) => (
@@ -98,66 +161,80 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
          {/* NOTA INFORMATIVA */}
          <div className="bg-amber-50/50 border border-amber-100/50 p-4 rounded-2xl flex gap-3 items-center">
             <Info size={16} className="text-amber-600 shrink-0" />
-            <p className="text-[9px] font-bold text-amber-800 uppercase italic leading-tight">
+            <p className="text-[9px] font-bold text-amber-800 uppercase italic leading-tight text-left">
                Imágenes con fines ilustrativos. Los lingotes se sirven al natural; salsas y extras se venden por separado.
             </p>
          </div>
 
          <div className="grid grid-cols-1 gap-6">
-            {activeData.map((item: any) => (
-              <div key={item.id} className="group bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col active:scale-[0.98] transition-all relative">
-                 
-                 {item.ahorro && (
-                   <div className="absolute top-4 left-4 z-20 bg-green-500 text-white px-4 py-1 rounded-full font-black text-[10px] uppercase italic shadow-lg animate-pulse">
-                     Ahorras ₡{item.ahorro.toLocaleString()}
-                   </div>
-                 )}
+            {activeData.map((item: any) => {
+              const isAvailable = stock[item.id] !== false;
+              
+              return (
+                <div key={item.id} className={`group bg-white rounded-[2rem] border shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col active:scale-[0.98] transition-all relative ${isAvailable ? 'border-slate-100' : 'border-red-50 opacity-70 grayscale'}`}>
+                   
+                   {!isAvailable && (
+                     <div className="absolute inset-0 z-30 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center">
+                        <div className="bg-red-600 text-white px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest shadow-2xl border-2 border-white">Agotado</div>
+                     </div>
+                   )}
 
-                 <div className={`${item.imagen ? 'h-52' : 'h-24 bg-slate-50'} overflow-hidden relative`}>
-                    {item.imagen ? (
-                      <img src={`/${item.imagen}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={item.nombre} />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center opacity-10">
-                        <UtensilsCrossed size={48} />
+                   {item.ahorro && (
+                     <div className="absolute top-4 left-4 z-20 bg-green-500 text-white px-4 py-1 rounded-full font-black text-[10px] uppercase italic shadow-lg animate-pulse">
+                       Ahorras ₡{item.ahorro.toLocaleString()}
+                     </div>
+                   )}
+
+                   {item.formatoRetail && (
+                     <div className="absolute top-4 left-4 z-20 bg-slate-900 text-lingote-gold px-4 py-1.5 rounded-full font-black text-[9px] uppercase tracking-widest border border-white/20 shadow-xl flex items-center gap-2">
+                       <Package size={12} /> FRASCO GOURMET
+                     </div>
+                   )}
+
+                   <div className={`${item.imagen ? 'h-52' : 'h-24 bg-slate-50'} overflow-hidden relative`}>
+                      {item.imagen ? (
+                        <img src={`/${item.imagen}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={item.nombre} />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center opacity-10"><UtensilsCrossed size={48} /></div>
+                      )}
+                      <div className="absolute bottom-4 right-4 bg-slate-900/90 backdrop-blur-md text-white px-4 py-1.5 rounded-full font-black text-sm border border-white/10 italic shadow-2xl">
+                         ₡{item.precio.toLocaleString()}
                       </div>
-                    )}
-                    
-                    <div className="absolute bottom-4 right-4 bg-slate-900/90 backdrop-blur-md text-white px-4 py-1.5 rounded-full font-black text-sm border border-white/10 italic shadow-2xl">
-                       ₡{item.precio.toLocaleString()}
-                    </div>
-                 </div>
+                   </div>
 
-                 <div className="p-5 space-y-3 text-left">
-                    <div>
-                       <div className="flex justify-between items-center mb-1">
-                          <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight leading-none italic">{item.nombre}</h3>
-                          {item.alergenos && <div className="flex gap-1 text-[10px] opacity-60">{item.alergenos}</div>}
-                       </div>
-                       
-                       {item.precioAnterior && (
-                         <p className="text-slate-300 text-[10px] font-bold line-through mb-1">Antes ₡{item.precioAnterior.toLocaleString()}</p>
-                       )}
+                   <div className="p-5 space-y-3 text-left">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                           <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight leading-none italic">{item.nombre}</h3>
+                           {item.precioAnterior && <p className="text-slate-300 text-[10px] font-bold line-through mt-1">Antes ₡{item.precioAnterior.toLocaleString()}</p>}
+                           <p className="text-slate-500 text-[11px] leading-relaxed font-medium mt-2">{item.descripcion || item.desc}</p>
+                        </div>
+                        {isAvailable && isOpen && (
+                          <button 
+                            onClick={() => handleAddItem(item)}
+                            className="bg-slate-900 text-white p-3 rounded-2xl shadow-lg active:scale-90 transition-transform"
+                          >
+                            <Plus size={20} />
+                          </button>
+                        )}
+                      </div>
 
-                       <p className="text-slate-500 text-[11px] leading-relaxed font-medium">
-                          {item.descripcion || item.desc}
-                       </p>
-                    </div>
-
-                    {item.ingredientesBase && (
-                       <div className="flex flex-wrap gap-1.5 pt-1">
-                          {item.ingredientesBase.map((ing: string) => (
-                            <span key={ing} className="bg-slate-50 text-slate-400 text-[7px] font-black uppercase px-2 py-0.5 rounded-md border border-slate-100/50">{ing}</span>
-                          ))}
-                       </div>
-                    )}
-                 </div>
-              </div>
-            ))}
+                      {item.ingredientesBase && (
+                         <div className="flex flex-wrap gap-1.5 pt-1">
+                            {item.ingredientesBase.map((ing: string) => (
+                              <span key={ing} className="bg-slate-50 text-slate-400 text-[8px] font-black uppercase px-2 py-0.5 rounded-md border border-slate-100/50">{ing}</span>
+                            ))}
+                         </div>
+                      )}
+                   </div>
+                </div>
+              );
+            })}
          </div>
       </main>
 
       {/* FOOTER */}
-      <footer className="mt-12 p-8 text-center space-y-6">
+      <footer className="mt-12 p-8 text-center space-y-6 pb-40">
          <div className="flex justify-center gap-4">
             <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-lg"><Star size={18} /></div>
             <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-lg"><Star size={18} /></div>
@@ -169,12 +246,27 @@ const LandingPage = ({ onAdminClick }: LandingPageProps) => {
          </div>
       </footer>
 
-      <div className="fixed bottom-6 left-0 w-full px-6 z-50 sm:hidden flex justify-center">
-         <a href="https://wa.me/506" className="w-full max-w-sm bg-slate-900 text-white py-5 rounded-[2rem] font-black text-sm uppercase italic tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all border border-white/5">
-            <Package size={20} className="text-lingote-gold" />
-            Pedir por WhatsApp
-         </a>
-      </div>
+      {/* BARRA DE PEDIDO FLOTANTE (CARRITO) */}
+      {itemsCount() > 0 && (
+        <div className="fixed bottom-6 left-0 w-full px-6 z-50 flex justify-center">
+           <button 
+             onClick={() => setIsCartOpen(true)}
+             className="w-full max-w-sm bg-slate-900 text-white py-5 rounded-[2rem] font-black text-sm uppercase italic tracking-widest shadow-2xl flex items-center justify-between px-8 active:scale-95 transition-all border border-white/10"
+           >
+              <div className="flex items-center gap-3">
+                 <div className="bg-lingote-gold text-slate-900 w-6 h-6 rounded-full flex items-center justify-center text-[10px]">{itemsCount()}</div>
+                 <span>Ver mi Pedido</span>
+              </div>
+              <ChevronRight size={20} className="text-lingote-gold" />
+           </button>
+        </div>
+      )}
+
+      <CartDrawer 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+        localOpen={isOpen} 
+      />
 
     </div>
   );

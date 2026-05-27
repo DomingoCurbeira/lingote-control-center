@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { 
   Calendar, Save, ChevronDown, ChevronUp, 
   UtensilsCrossed, Zap, Coffee, IceCream, Droplet, 
-  CheckCircle2, AlertCircle, Download, Upload
+  CheckCircle2, Download, Upload, Loader2
 } from 'lucide-react';
 import { 
   MENU_LINGOTES, MENU_PROMOCIONES, MENU_POSTRES, 
   MENU_BEBIDAS, MENU_SALSAS 
 } from '../data/menuPublico';
+import { supabase } from '../lib/supabase';
 
 interface VentaItem {
   id: string | number;
@@ -28,13 +29,29 @@ const BitacoraVentas = () => {
   const [historico, setHistorico] = useState<RegistroDia[]>([]);
   const [expandCategory, setExpandCategory] = useState<string | null>('lingotes');
   const [mensajeGuardado, setMensajeGuardado] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // --- CARGA DE DATOS ---
+  // --- CARGA DE DATOS DESDE SUPABASE ---
   useEffect(() => {
-    const savedVentas = localStorage.getItem('lingote_bitacora_ventas');
-    if (savedVentas) {
-      setHistorico(JSON.parse(savedVentas));
-    }
+    const fetchHistorico = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('bitacora_ventas')
+        .select('*')
+        .order('fecha', { ascending: false });
+
+      if (!error && data) {
+        const mappedData: RegistroDia[] = data.map(row => ({
+          fecha: row.fecha,
+          ventas: row.ventas,
+          totalBruto: row.total_bruto
+        }));
+        setHistorico(mappedData);
+      }
+      setLoading(false);
+    };
+
+    fetchHistorico();
   }, []);
 
   // Sincronizar el formulario con la fecha seleccionada
@@ -43,7 +60,6 @@ const BitacoraVentas = () => {
     if (registroExistente) {
       setVentasActuales(registroExistente.ventas);
     } else {
-      // Inicializar con todos los productos del menú en 0
       const inicial: VentaItem[] = [
         ...MENU_LINGOTES.map(p => ({ id: p.id, nombre: p.nombre, precio: p.precio, cantidad: 0 })),
         ...MENU_PROMOCIONES.map(p => ({ id: p.id, nombre: p.nombre, precio: p.precio, cantidad: 0 })),
@@ -69,22 +85,29 @@ const BitacoraVentas = () => {
     ));
   };
 
-  const guardarRegistro = () => {
+  const guardarRegistro = async () => {
     const total = ventasActuales.reduce((sum, v) => sum + (v.cantidad * v.precio), 0);
-    const nuevoRegistro: RegistroDia = {
-      fecha,
-      ventas: ventasActuales,
-      totalBruto: total
-    };
+    
+    // Guardar en Supabase
+    const { error } = await supabase
+      .from('bitacora_ventas')
+      .upsert({ 
+        fecha, 
+        ventas: ventasActuales, 
+        total_bruto: total,
+        created_at: new Date().toISOString()
+      });
 
-    const nuevoHistorico = historico.filter(r => r.fecha !== fecha);
-    nuevoHistorico.push(nuevoRegistro);
-    
-    setHistorico(nuevoHistorico);
-    localStorage.setItem('lingote_bitacora_ventas', JSON.stringify(nuevoHistorico));
-    
-    setMensajeGuardado(true);
-    setTimeout(() => setMensajeGuardado(false), 2000);
+    if (!error) {
+      const nuevoRegistro: RegistroDia = { fecha, ventas: ventasActuales, totalBruto: total };
+      const nuevoHistorico = historico.filter(r => r.fecha !== fecha);
+      setHistorico([nuevoRegistro, ...nuevoHistorico]);
+      
+      setMensajeGuardado(true);
+      setTimeout(() => setMensajeGuardado(false), 2000);
+    } else {
+      alert("Error al guardar en la nube");
+    }
   };
 
   const exportarHistorico = () => {
@@ -96,17 +119,18 @@ const BitacoraVentas = () => {
     a.click();
   };
 
-  const importarHistorico = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const importarHistorico = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
         const data = JSON.parse(evt.target?.result as string);
+        // Opcional: Subir todo a Supabase uno por uno o usar un batch (más complejo)
+        // Por ahora, lo guardamos localmente y actualizamos el estado
         setHistorico(data);
-        localStorage.setItem('lingote_bitacora_ventas', JSON.stringify(data));
-        alert('✅ Histórico de ventas cargado');
-      } catch (err) { alert('❌ Error al importar histórico'); }
+        alert('✅ Datos cargados en sesión. Dale a guardar en cada día para subir a la nube.');
+      } catch (err) { alert('❌ Error'); }
     };
     reader.readAsText(file);
   };
@@ -173,7 +197,7 @@ const BitacoraVentas = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
            <div className="text-center md:text-left">
               <h2 className="text-3xl font-black tracking-tighter uppercase italic leading-none mb-2">Bitácora de Ventas</h2>
-              <p className="text-lingote-gold font-bold uppercase tracking-widest text-[10px] italic">Control de Cierre Diario</p>
+              <p className="text-lingote-gold font-bold uppercase tracking-widest text-[10px] italic">Control de Cierre Diario en la Nube</p>
            </div>
            <div className="bg-white/10 backdrop-blur-xl p-4 rounded-3xl border border-white/10 flex items-center gap-4">
               <Calendar className="text-lingote-gold" size={24} />
@@ -187,70 +211,61 @@ const BitacoraVentas = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mx-1">
-        
-        {/* FORMULARIO DE REGISTRO */}
-        <div className="lg:col-span-8 space-y-4">
-           {renderCategory('Lingotes Base', <UtensilsCrossed size={20} />, 'lingotes', MENU_LINGOTES)}
-           {renderCategory('Promociones', <Zap size={20} />, 'promos', MENU_PROMOCIONES)}
-           {renderCategory('Postres', <IceCream size={20} />, 'postres', MENU_POSTRES)}
-           {renderCategory('Bebidas', <Coffee size={20} />, 'bebidas', MENU_BEBIDAS)}
-           {renderCategory('Extras y Salsas', <Droplet size={20} />, 'salsas', MENU_SALSAS)}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-300 gap-4">
+           <Loader2 className="animate-spin" size={48} />
+           <p className="font-black uppercase tracking-widest text-[10px]">Cargando historial de ventas...</p>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mx-1">
+          <div className="lg:col-span-8 space-y-4">
+             {renderCategory('Lingotes Base', <UtensilsCrossed size={20} />, 'lingotes', MENU_LINGOTES)}
+             {renderCategory('Promociones', <Zap size={20} />, 'promos', MENU_PROMOCIONES)}
+             {renderCategory('Postres', <IceCream size={20} />, 'postres', MENU_POSTRES)}
+             {renderCategory('Bebidas', <Coffee size={20} />, 'bebidas', MENU_BEBIDAS)}
+             {renderCategory('Extras y Salsas', <Droplet size={20} />, 'salsas', MENU_SALSAS)}
+          </div>
 
-        {/* RESUMEN DEL DÍA */}
-        <div className="lg:col-span-4 space-y-6">
-           <div className="bg-white p-8 rounded-[2.5rem] border border-lingote-accent shadow-xl sticky top-24 space-y-8">
-              <div className="text-center space-y-2">
-                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] italic">Venta Total del Día</p>
-                 <h3 className="text-5xl font-black text-slate-900 tracking-tighter leading-none italic">
-                   ₡{totalDelDia.toLocaleString()}
-                 </h3>
-              </div>
+          <div className="lg:col-span-4 space-y-6">
+             <div className="bg-white p-8 rounded-[2.5rem] border border-lingote-accent shadow-xl sticky top-24 space-y-8">
+                <div className="text-center space-y-2">
+                   <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] italic">Venta Total del Día</p>
+                   <h3 className="text-5xl font-black text-slate-900 tracking-tighter leading-none italic">
+                     ₡{totalDelDia.toLocaleString()}
+                   </h3>
+                </div>
 
-              <div className="space-y-3">
-                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-600">
-                    <CheckCircle2 size={18} className="text-green-500" />
-                    <span className="text-[10px] font-black uppercase italic">Venta Bruta Calculada</span>
-                 </div>
-                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-600">
-                    <AlertCircle size={18} className="text-amber-500" />
-                    <span className="text-[10px] font-black uppercase italic">Sincronizado con Dashboard</span>
-                 </div>
-              </div>
+                <div className="space-y-3">
+                   <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-600">
+                      <CheckCircle2 size={18} className="text-green-500" />
+                      <span className="text-[10px] font-black uppercase italic">Sincronizado Cloud</span>
+                   </div>
+                </div>
 
-              <button 
-                onClick={guardarRegistro}
-                className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase italic tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 ${mensajeGuardado ? 'bg-green-600 text-white animate-in zoom-in duration-300' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-              >
-                {mensajeGuardado ? (
-                  <> <CheckCircle2 size={20} /> ¡Dato Guardado! </>
-                ) : (
-                  <> <Save size={20} /> Guardar Cierre </>
-                )}
-              </button>
+                <button 
+                  onClick={guardarRegistro}
+                  className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase italic tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 ${mensajeGuardado ? 'bg-green-600 text-white animate-in zoom-in duration-300' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+                >
+                  {mensajeGuardado ? (
+                    <> <CheckCircle2 size={20} /> ¡Guardado en la Nube! </>
+                  ) : (
+                    <> <Save size={20} /> Guardar Cierre </>
+                  )}
+                </button>
 
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                 <button 
-                   onClick={exportarHistorico}
-                   className="flex items-center justify-center gap-2 py-3 rounded-2xl border border-lingote-accent text-[9px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all italic"
-                 >
-                   <Download size={14} /> Backup
-                 </button>
-                 <label className="flex items-center justify-center gap-2 py-3 rounded-2xl border border-lingote-accent text-[9px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all cursor-pointer italic text-center">
-                   <Upload size={14} /> Cargar
-                   <input type="file" className="hidden" accept=".json" onChange={importarHistorico} />
-                 </label>
-              </div>
-
-              <div className="pt-6 border-t border-slate-100">
-                 <p className="text-[8px] font-bold text-slate-300 uppercase text-center leading-relaxed">
-                   Los registros se guardan en la memoria local de este dispositivo.
-                 </p>
-              </div>
-           </div>
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                   <button onClick={exportarHistorico} className="flex items-center justify-center gap-2 py-3 rounded-2xl border border-lingote-accent text-[9px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all italic">
+                     <Download size={14} /> Backup
+                   </button>
+                   <label className="flex items-center justify-center gap-2 py-3 rounded-2xl border border-lingote-accent text-[9px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all cursor-pointer italic text-center">
+                     <Upload size={14} /> Cargar
+                     <input type="file" className="hidden" accept=".json" onChange={importarHistorico} />
+                   </label>
+                </div>
+             </div>
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

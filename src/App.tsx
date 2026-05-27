@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList 
+  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power 
 } from 'lucide-react';
 import Rentabilidad from './components/Rentabilidad';
 import FichasB2B from './components/FichasB2B';
@@ -11,6 +11,7 @@ import LandingPage from './components/LandingPage';
 import Etiquetador from './components/Etiquetador';
 import Dashboard from './components/Dashboard';
 import BitacoraVentas from './components/BitacoraVentas';
+import GestionStock from './components/GestionStock';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -37,6 +38,7 @@ function App() {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'stock', label: 'Estado del Local', icon: Power },
     { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
     { id: 'ventas', label: 'Bitácora', icon: ClipboardList },
     { id: 'finanzas', label: 'Rentabilidad', icon: Wallet },
@@ -74,19 +76,21 @@ function App() {
               {item.label}
             </button>
           ))}
+        </nav>
+        <div className="p-4 border-t border-lingote-accent space-y-4">
           <button 
             onClick={() => {
               sessionStorage.removeItem('lingote_admin_auth');
               setIsAuthorized(false);
               setIsAdminRoute(false);
             }}
-            className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-bold text-red-300 hover:bg-red-50 hover:text-red-500 mt-8 transition-all"
+            className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-red-400 hover:bg-red-50 hover:text-red-600 transition-all border border-red-50"
           >
-            <X size={20} /> Cerrar Sesión
+            <X size={16} /> Cerrar Sesión
           </button>
-        </nav>
-        <div className="p-8 border-t border-lingote-accent text-[10px] text-slate-300 font-bold uppercase tracking-widest text-center">
-          v1.0 • Pura Vida
+          <div className="text-[10px] text-slate-300 font-bold uppercase tracking-widest text-center">
+            v1.0 • Pura Vida
+          </div>
         </div>
       </aside>
 
@@ -101,8 +105,9 @@ function App() {
       </header>
 
       {isMenuOpen && (
-        <div className="no-print lg:hidden fixed inset-0 bg-white z-30 pt-20 animate-in fade-in duration-300">
-          <nav className="p-6 space-y-4">
+        <div className="no-print lg:hidden fixed inset-0 bg-white z-30 pt-20 overflow-y-auto animate-in fade-in duration-300">
+          <nav className="p-6 space-y-4 pb-20">
+
             {menuItems.map((item) => (
               <button
                 key={item.id}
@@ -136,6 +141,7 @@ function App() {
       <main className="flex-1 lg:ml-64 p-2 md:p-8 lg:p-12 pt-20 lg:pt-12 min-h-screen max-w-full overflow-x-hidden">
         <div className="max-w-6xl mx-auto">
           {activeTab === 'dashboard' && <Dashboard />}
+          {activeTab === 'stock' && <GestionStock />}
           {activeTab === 'etiquetas' && <Etiquetador />}
           {activeTab === 'ventas' && <BitacoraVentas />}
           {activeTab === 'finanzas' && <Rentabilidad />}
