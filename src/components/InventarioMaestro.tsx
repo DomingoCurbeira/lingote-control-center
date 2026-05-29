@@ -15,6 +15,11 @@ export interface InsumoMaestro {
   precio_costo: number;
   categoria: string;
   updated_at: string;
+  kcal: number;
+  carbs: number;
+  protein: number;
+  fat: number;
+  sodium: number;
 }
 
 const InventarioMaestro = () => {
@@ -28,7 +33,12 @@ const InventarioMaestro = () => {
     proveedor: '',
     unidad: 'kilo',
     precio_costo: 0,
-    categoria: 'vegetales'
+    categoria: 'vegetales',
+    kcal: 0,
+    carbs: 0,
+    protein: 0,
+    fat: 0,
+    sodium: 0
   });
 
   useEffect(() => {
@@ -62,22 +72,25 @@ const InventarioMaestro = () => {
 
     if (!error) {
       notify.success("Insumo Registrado", `${nuevoInsumo.nombre} se ha añadido al maestro.`);
-      setNuevoInsumo({ nombre: '', proveedor: '', unidad: 'kilo', precio_costo: 0, categoria: 'vegetales' });
+      setNuevoInsumo({ 
+        nombre: '', proveedor: '', unidad: 'kilo', precio_costo: 0, 
+        categoria: 'vegetales', kcal: 0, carbs: 0, protein: 0, fat: 0, sodium: 0 
+      });
       fetchInsumos();
     } else {
       notify.error("Error al registrar", error.message);
     }
   };
 
-  const actualizarPrecio = async (id: string, nuevoPrecio: number) => {
+  const actualizarInsumo = async (id: string, campos: Partial<InsumoMaestro>) => {
     const { error } = await supabase
       .from('insumos')
-      .update({ precio_costo: nuevoPrecio, updated_at: new Date().toISOString() })
+      .update({ ...campos, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (!error) {
-      notify.success("Precio Actualizado", "El nuevo costo se ha sincronizado con la nube.");
-      setInsumos(insumos.map(i => i.id === id ? { ...i, precio_costo: nuevoPrecio } : i));
+      notify.success("Insumo Actualizado", "Los cambios se han sincronizado con la nube.");
+      setInsumos(insumos.map(i => i.id === id ? { ...i, ...campos } : i));
       setEditId(null);
     }
   };
@@ -174,6 +187,31 @@ const InventarioMaestro = () => {
                  <option value="gramo">Gramo</option>
                </select>
             </div>
+
+            {/* Fila Nutricional */}
+            <div className="md:col-span-4 grid grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t border-slate-50">
+               <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-slate-300 ml-1">Kcal (100g)</label>
+                  <input type="number" className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-lingote-gold" value={nuevoInsumo.kcal} onChange={e => setNuevoInsumo({...nuevoInsumo, kcal: Number(e.target.value)})} />
+               </div>
+               <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-slate-300 ml-1">Carbs (g)</label>
+                  <input type="number" className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-lingote-gold" value={nuevoInsumo.carbs} onChange={e => setNuevoInsumo({...nuevoInsumo, carbs: Number(e.target.value)})} />
+               </div>
+               <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-slate-300 ml-1">Prot (g)</label>
+                  <input type="number" className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-lingote-gold" value={nuevoInsumo.protein} onChange={e => setNuevoInsumo({...nuevoInsumo, protein: Number(e.target.value)})} />
+               </div>
+               <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-slate-300 ml-1">Grasa (g)</label>
+                  <input type="number" className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-lingote-gold" value={nuevoInsumo.fat} onChange={e => setNuevoInsumo({...nuevoInsumo, fat: Number(e.target.value)})} />
+               </div>
+               <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-slate-300 ml-1">Sodio (mg)</label>
+                  <input type="number" className="w-full bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-lingote-gold" value={nuevoInsumo.sodium} onChange={e => setNuevoInsumo({...nuevoInsumo, sodium: Number(e.target.value)})} />
+               </div>
+            </div>
+
             <div className="md:col-span-4 pt-2">
                <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase italic tracking-widest flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all">
                   <Plus size={20} className="text-lingote-gold" /> Registrar en el Maestro
@@ -234,34 +272,126 @@ const InventarioMaestro = () => {
                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Base: 1 {insumo.unidad}</p>
                               </div>
 
-                              <div className="mt-6 flex items-center justify-between">
+                              <div className="mt-6 flex flex-col gap-4">
                                  {editId === insumo.id ? (
-                                    <div className="flex items-center gap-2 w-full animate-in slide-in-from-left-2 duration-300">
-                                       <input 
-                                         autoFocus
-                                         type="number"
-                                         className="flex-1 bg-slate-50 border-2 border-lingote-gold p-2 rounded-xl font-black text-sm outline-none"
-                                         defaultValue={insumo.precio_costo}
-                                         onBlur={e => actualizarPrecio(insumo.id, Number(e.target.value))}
-                                         onKeyDown={e => e.key === 'Enter' && actualizarPrecio(insumo.id, Number((e.target as any).value))}
-                                       />
-                                       <Save size={16} className="text-lingote-gold" />
+                                    <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                                       <div className="grid grid-cols-2 gap-2">
+                                          <div className="col-span-2 space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Nombre</label>
+                                             <input type="text" className="w-full bg-slate-50 border border-lingote-gold p-2 rounded-xl font-black text-xs uppercase" defaultValue={insumo.nombre} id={`edit-nombre-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Proveedor</label>
+                                             <select className="w-full bg-slate-50 border border-lingote-gold p-2 rounded-xl font-black text-[10px] uppercase appearance-none" defaultValue={insumo.proveedor} id={`edit-prov-${insumo.id}`}>
+                                                <option value="">Seleccionar...</option>
+                                                {proveedores.map(p => <option key={p.nombre} value={p.nombre}>{p.nombre}</option>)}
+                                                <option value="OTRO">OTRO / VARIOS</option>
+                                             </select>
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Categoría</label>
+                                             <select className="w-full bg-slate-50 border border-lingote-gold p-2 rounded-xl font-black text-[10px] uppercase appearance-none" defaultValue={insumo.categoria} id={`edit-cat-${insumo.id}`}>
+                                                {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                                             </select>
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Unidad</label>
+                                             <select className="w-full bg-slate-50 border border-lingote-gold p-2 rounded-xl font-black text-[10px] uppercase appearance-none" defaultValue={insumo.unidad} id={`edit-unidad-${insumo.id}`}>
+                                                <option value="kilo">Kilo</option>
+                                                <option value="litro">Litro</option>
+                                                <option value="unidad">Unidad</option>
+                                                <option value="gramo">Gramo</option>
+                                             </select>
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Precio</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-lingote-gold p-2 rounded-xl font-black text-xs" defaultValue={insumo.precio_costo} id={`edit-price-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Kcal (100g)</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.kcal} id={`edit-kcal-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Carbs</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.carbs} id={`edit-carbs-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Prot</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.protein} id={`edit-prot-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Grasa</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.fat} id={`edit-fat-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Sodio</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.sodium} id={`edit-sodium-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1 flex items-end">
+                                            <button onClick={() => setEditId(null)} className="w-full py-2 bg-slate-200 text-slate-500 rounded-xl font-black text-[10px] uppercase">Cancelar</button>
+                                          </div>
+                                       </div>
+                                       <button 
+                                         onClick={() => {
+                                           const n = (document.getElementById(`edit-nombre-${insumo.id}`) as HTMLInputElement).value.toUpperCase();
+                                           const pv = (document.getElementById(`edit-prov-${insumo.id}`) as HTMLSelectElement).value;
+                                           const ct = (document.getElementById(`edit-cat-${insumo.id}`) as HTMLSelectElement).value;
+                                           const un = (document.getElementById(`edit-unidad-${insumo.id}`) as HTMLSelectElement).value;
+                                           const p = Number((document.getElementById(`edit-price-${insumo.id}`) as HTMLInputElement).value);
+                                           const k = Number((document.getElementById(`edit-kcal-${insumo.id}`) as HTMLInputElement).value);
+                                           const c = Number((document.getElementById(`edit-carbs-${insumo.id}`) as HTMLInputElement).value);
+                                           const pr = Number((document.getElementById(`edit-prot-${insumo.id}`) as HTMLInputElement).value);
+                                           const f = Number((document.getElementById(`edit-fat-${insumo.id}`) as HTMLInputElement).value);
+                                           const s = Number((document.getElementById(`edit-sodium-${insumo.id}`) as HTMLInputElement).value);
+                                           actualizarInsumo(insumo.id, { nombre: n, proveedor: pv, categoria: ct, unidad: un, precio_costo: p, kcal: k, carbs: c, protein: pr, fat: f, sodium: s });
+                                         }}
+                                         className="w-full bg-slate-900 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+                                       >
+                                          <Save size={14} className="text-lingote-gold" /> Guardar Todos los Cambios
+                                       </button>
                                     </div>
                                  ) : (
-                                    <button 
-                                      onClick={() => setEditId(insumo.id)}
-                                      className="text-2xl font-black text-slate-900 italic tracking-tighter hover:text-lingote-gold transition-colors"
-                                    >
-                                       ₡{insumo.precio_costo.toLocaleString()}
-                                    </button>
+                                    <>
+                                       <div className="flex items-center justify-between">
+                                          <button 
+                                            onClick={() => setEditId(insumo.id)}
+                                            className="text-2xl font-black text-slate-900 italic tracking-tighter hover:text-lingote-gold transition-colors"
+                                          >
+                                             ₡{insumo.precio_costo.toLocaleString()}
+                                          </button>
+                                          <button 
+                                             onClick={() => eliminarInsumo(insumo.id)}
+                                             className="p-2 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                          >
+                                             <Trash2 size={16} />
+                                          </button>
+                                       </div>
+                                       
+                                       {/* Mini Resumen Nutricional en Card */}
+                                       <div className="grid grid-cols-5 gap-1 pt-2 border-t border-slate-50 mt-2">
+                                          <div className="text-center">
+                                             <p className="text-[6px] font-black text-slate-300 uppercase">Kcal</p>
+                                             <p className="text-[9px] font-black text-slate-600 italic">{insumo.kcal || 0}</p>
+                                          </div>
+                                          <div className="text-center">
+                                             <p className="text-[6px] font-black text-slate-300 uppercase">Carb</p>
+                                             <p className="text-[9px] font-black text-slate-600 italic">{insumo.carbs || 0}g</p>
+                                          </div>
+                                          <div className="text-center">
+                                             <p className="text-[6px] font-black text-slate-300 uppercase">Prot</p>
+                                             <p className="text-[9px] font-black text-slate-600 italic">{insumo.protein || 0}g</p>
+                                          </div>
+                                          <div className="text-center">
+                                             <p className="text-[6px] font-black text-slate-300 uppercase">Fat</p>
+                                             <p className="text-[9px] font-black text-slate-600 italic">{insumo.fat || 0}g</p>
+                                          </div>
+                                          <div className="text-center">
+                                             <p className="text-[6px] font-black text-slate-300 uppercase">Na</p>
+                                             <p className="text-[9px] font-black text-slate-600 italic">{insumo.sodium || 0}mg</p>
+                                          </div>
+                                       </div>
+                                    </>
                                  )}
-                                 
-                                 <button 
-                                    onClick={() => eliminarInsumo(insumo.id)}
-                                    className="p-2 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                 >
-                                    <Trash2 size={16} />
-                                 </button>
                               </div>
 
                               <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">

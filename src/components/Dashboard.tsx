@@ -5,6 +5,7 @@ import {
   Activity, ShieldAlert, Heart
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import { supabase } from '../lib/supabase';
 import ReporteMensual from './ReporteMensual';
 
@@ -119,10 +120,15 @@ const Dashboard = () => {
         height: 1123,
         style: { transform: 'none' }
       });
-      const link = document.createElement('a');
-      link.download = `Reporte-Lingote-${new Date().toLocaleDateString('es-CR')}.png`;
-      link.href = dataUrl;
-      link.click();
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [794, 1123] // A4 format matching the component size
+      });
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, 794, 1123);
+      pdf.save(`Reporte-Lingote-${new Date().toLocaleDateString('es-CR')}.pdf`);
     }
   };
 

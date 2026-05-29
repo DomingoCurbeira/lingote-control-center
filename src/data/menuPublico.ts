@@ -22,7 +22,7 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     id: "lin-1",
     nombre: "Lingote clásico",
     precio: 1500,
-    descripcion: "La esencia de la tradición española. Nuestra tortilla artesanal, jugosa y dorada, servida sobre pan artesano. (Añade tus extras favoritos por ₡500).",
+    descripcion: "La esencia de la tradición española. Nuestra tortilla artesanal, jugosa y dorada, servida con pan artesano. (Añade tus extras favoritos por ₡500).",
     imagen: "clasico.webp",
     ingredientesBase: ["Tortilla de Patatas", "Pan Artesano"],
     alergenos: ["🥚", "🌽"],

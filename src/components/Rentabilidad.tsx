@@ -29,6 +29,15 @@ interface EscandalloCompleto {
   ingredientes: Ingrediente[];
   esProductoFinal: boolean;
   imagen?: string;
+  nutricion?: any;
+  denominacion?: string;
+  descripcion?: string;
+  alergenos?: string;
+  vidaUtil?: string;
+  conservacion?: string;
+  instrucciones?: string;
+  registroSanitario?: string;
+  pesoNeto?: string;
 }
 
 interface GastosGlobales {
@@ -99,7 +108,16 @@ const Rentabilidad = () => {
           packaging: Number(r.packaging),
           esProductoFinal: r.es_producto_final,
           imagen: r.imagen || undefined,
-          ingredientes: r.ingredientes || []
+          ingredientes: r.ingredientes || [],
+          nutricion: r.nutricion,
+          denominacion: r.denominacion,
+          descripcion: r.descripcion,
+          alergenos: r.alergenos,
+          vidaUtil: r.vida_util,
+          conservacion: r.conservacion,
+          instrucciones: r.instrucciones,
+          registroSanitario: r.registro_sanitario,
+          pesoNeto: r.peso_neto
         }));
         setRecetas(mapped);
         if (mapped.length > 0) setActiveId(mapped[0].id);
@@ -114,12 +132,13 @@ const Rentabilidad = () => {
     fetchCloudData();
   }, []);
 
-  // Sincronización automática de precios vinculados
+  // Sincronización automática de precios y NUTRICIÓN vinculada
   useEffect(() => {
     if (insumosMaestros.length === 0 || recetas.length === 0) return;
 
     let huboCambios = false;
     const nuevasRecetas = recetas.map(r => {
+      // 1. Sincronizar Insumos (Precios)
       const nuevosIngredientes = r.ingredientes.map(ing => {
         if (ing.insumoMaestroId) {
           const maestro = insumosMaestros.find(m => m.id === ing.insumoMaestroId);
@@ -130,7 +149,52 @@ const Rentabilidad = () => {
         }
         return ing;
       });
-      return { ...r, ingredientes: nuevosIngredientes };
+
+      // 2. Calcular Nutrición Automática (basada en el Maestro)
+      const nutricionBase = {
+        calorias: 0, grasaTotal: 0, grasaSaturada: 0, grasasTrans: 0,
+        colesterol: 0, carbohidratos: 0, azucares: 0, fibraDietetica: 0,
+        proteina: 0, sodio: 0
+      };
+
+      let tieneNutricionVinculada = false;
+      nuevosIngredientes.forEach(ing => {
+        const maestro = insumosMaestros.find(m => m.id === ing.insumoMaestroId);
+        if (maestro) {
+          tieneNutricionVinculada = true;
+          const factor = ing.cantidadReceta / 100; // Datos maestro son por 100g
+          nutricionBase.calorias += (maestro.kcal || 0) * factor;
+          nutricionBase.grasaTotal += (maestro.fat || 0) * factor;
+          nutricionBase.proteina += (maestro.protein || 0) * factor;
+          nutricionBase.carbohidratos += (maestro.carbs || 0) * factor;
+          nutricionBase.sodio += (maestro.sodium || 0) * factor;
+          // ... otros macros si el maestro los tuviera
+        }
+      });
+
+      // Normalizar nutrición por porción (opcional, o por 100g de producto final)
+      // Para la Ficha B2B suele ser por 100g de producto final
+      const pesoTotal = nuevosIngredientes.reduce((sum, i) => sum + i.cantidadReceta, 0);
+      const factor100g = pesoTotal > 0 ? 100 / pesoTotal : 0;
+
+      const nutricionFinal = {
+        calorias: Math.round(nutricionBase.calorias * factor100g),
+        grasaTotal: Number((nutricionBase.grasaTotal * factor100g).toFixed(1)),
+        proteina: Number((nutricionBase.proteina * factor100g).toFixed(1)),
+        carbohidratos: Number((nutricionBase.carbohidratos * factor100g).toFixed(1)),
+        sodio: Math.round(nutricionBase.sodio * factor100g),
+        // Mantener otros en 0 o promediar
+        grasaSaturada: 0, grasasTrans: 0, colesterol: 0, azucares: 0, fibraDietetica: 0
+      };
+
+      // Verificar si la nutrición calculada difiere de la guardada
+      if (JSON.stringify(r.nutricion) !== JSON.stringify(nutricionFinal) && tieneNutricionVinculada) {
+        huboCambios = true;
+        return { ...r, ingredientes: nuevosIngredientes, nutricion: nutricionFinal };
+      }
+
+      if (huboCambios) return { ...r, ingredientes: nuevosIngredientes };
+      return r;
     });
 
     if (huboCambios) {
@@ -162,11 +226,21 @@ const Rentabilidad = () => {
         es_producto_final: receta.esProductoFinal,
         imagen: receta.imagen,
         ingredientes: receta.ingredientes,
+        nutricion: receta.nutricion,
+        denominacion: receta.denominacion,
+        descripcion: receta.descripcion,
+        alergenos: receta.alergenos,
+        vida_util: receta.vidaUtil,
+        conservacion: receta.conservacion,
+        instrucciones: receta.instrucciones,
+        registro_sanitario: receta.registroSanitario,
+        peso_neto: receta.pesoNeto,
         updated_at: new Date().toISOString()
       });
-    
+
     if (error) notify.error("Error al sincronizar", error.message);
   };
+
 
   const crearNuevaReceta = async () => {
     const nueva: EscandalloCompleto = {
@@ -177,7 +251,27 @@ const Rentabilidad = () => {
       margenObjetivo: 65,
       packaging: 150,
       esProductoFinal: true,
-      ingredientes: []
+      ingredientes: [],
+      denominacion: '',
+      descripcion: '',
+      alergenos: '',
+      vidaUtil: '',
+      conservacion: '',
+      instrucciones: '',
+      registroSanitario: '',
+      pesoNeto: '',
+      nutricion: {
+        calorias: 0,
+        grasaTotal: 0,
+        grasaSaturada: 0,
+        grasasTrans: 0,
+        colesterol: 0,
+        carbohidratos: 0,
+        azucares: 0,
+        fibra: 0,
+        proteina: 0,
+        sodio: 0
+      }
     };
     
     setRecetas([...recetas, nueva]);
@@ -217,7 +311,7 @@ const Rentabilidad = () => {
   };
 
   const importarDesdeMaestro = async () => {
-    const confirmacion = await notify.confirm("¿Cargar Catálogo?", "Se añadirán los productos oficiales.");
+    const confirmacion = await notify.confirm("¿Cargar Catálogo?", "Se añadirán los productos oficiales con toda su información técnica.");
     if (!confirmacion) return;
 
     const nuevasRecetas: EscandalloCompleto[] = MASTER_DATABASE
@@ -231,6 +325,15 @@ const Rentabilidad = () => {
         margenObjetivo: 65,
         esProductoFinal: !['salsas', 'insumos'].includes(p.categoria),
         imagen: p.imagen.startsWith('data:') ? p.imagen : undefined,
+        nutricion: p.nutricion,
+        denominacion: p.denominacion,
+        descripcion: p.descripcionCompleta,
+        alergenos: p.alergenos,
+        vidaUtil: `${p.vidaUtilDias} Días`,
+        conservacion: p.conservacion,
+        instrucciones: p.instrucciones,
+        registroSanitario: p.registroSanitario,
+        pesoNeto: p.pesoNeto,
         ingredientes: [
           { id: '1', nombre: 'Materia Prima Base', precioCompra: p.escandallo.costoInsumos, cantidadReceta: 1000, merma: p.escandallo.mermaPorcentaje }
         ]

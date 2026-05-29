@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FileText, ChevronRight, ShieldCheck, Clock, Download, Image as ImageIcon } from 'lucide-react';
 import { INFO_FABRICANTE } from '../data/masterDatabase';
 import { toPng } from 'html-to-image';
+import { supabase } from '../lib/supabase';
 
 interface Ingrediente {
   id: string;
@@ -31,22 +32,70 @@ interface EscandalloCompleto {
   porciones: number;
   margenObjetivo: number;
   nutricion?: Nutricion;
+  // Nuevos campos para el estándar 10/10
+  denominacion?: string;
+  descripcion?: string;
+  alergenos?: string;
+  vidaUtil?: string;
+  conservacion?: string;
+  instrucciones?: string;
+  registroSanitario?: string;
+  pesoNeto?: string;
 }
 
 const FichasB2B = () => {
   const [recetas, setRecetas] = useState<EscandalloCompleto[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [lote, setLote] = useState('L-001');
+  const [fechaProduccion, setFechaProduccion] = useState(new Date().toISOString().split('T')[0]);
   const fichaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('lingote_escandallos');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setRecetas(parsed);
-        if (parsed.length > 0) setActiveId(parsed[0].id);
-      } catch (e) { console.error("Error loading recipes"); }
-    }
+    const fetchRecetas = async () => {
+      console.log("FichasB2B: Iniciando carga de recetas desde Supabase...");
+      const { data, error } = await supabase
+        .from('recetas')
+        .select('*');
+
+      if (error) {
+        console.error("FichasB2B: Error de Supabase:", error);
+        return;
+      }
+
+      if (data) {
+        console.log("FichasB2B: Datos crudos recibidos:", data);
+        console.log("FichasB2B: Cantidad de recetas encontradas:", data.length);
+        
+        const mapped = data.map(r => ({
+          id: r.id,
+          nombre: r.nombre || 'Sin nombre',
+          categoria: r.categoria || 'Sin categoría',
+          imagen: r.imagen,
+          ingredientes: r.ingredientes || [],
+          porciones: r.porciones || 1,
+          margenObjetivo: r.margen_objetivo || 0,
+          nutricion: r.nutricion,
+          denominacion: r.denominacion,
+          descripcion: r.descripcion,
+          alergenos: r.alergenos,
+          vidaUtil: r.vida_util,
+          conservacion: r.conservacion,
+          instrucciones: r.instrucciones,
+          registroSanitario: r.registro_sanitario,
+          pesoNeto: r.peso_neto
+        }));
+
+        console.log("FichasB2B: Recetas mapeadas listas para el estado:", mapped);
+        setRecetas(mapped);
+        if (mapped.length > 0) {
+          console.log("FichasB2B: Activando primera receta:", mapped[0].id);
+          setActiveId(mapped[0].id);
+        }
+      } else {
+        console.warn("FichasB2B: No se recibieron datos de Supabase.");
+      }
+    };
+    fetchRecetas();
   }, []);
 
   const activeReceta = recetas.find(r => r.id === activeId) || null;
@@ -72,6 +121,30 @@ const FichasB2B = () => {
       
       {/* 1. SELECTOR */}
       <aside className="no-print w-full lg:w-72 shrink-0 space-y-4 max-w-full overflow-hidden">
+        <div className="bg-white p-3 md:p-6 rounded-[1.5rem] border border-lingote-accent shadow-sm">
+          <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-4 pl-1">Trazabilidad (Impresión)</h3>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[8px] font-black uppercase text-slate-400 ml-1">Número de Lote</label>
+              <input 
+                type="text" 
+                className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-bold text-xs outline-none focus:border-lingote-gold"
+                value={lote}
+                onChange={(e) => setLote(e.target.value.toUpperCase())}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[8px] font-black uppercase text-slate-400 ml-1">Fecha de Producción</label>
+              <input 
+                type="date" 
+                className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl font-bold text-xs outline-none focus:border-lingote-gold"
+                value={fechaProduccion}
+                onChange={(e) => setFechaProduccion(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white p-3 md:p-6 rounded-[1.5rem] border border-lingote-accent shadow-sm">
           <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-4 pl-1">Selector B2B</h3>
           <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto pb-2 scrollbar-hide">
@@ -144,12 +217,36 @@ const FichasB2B = () => {
                            </div>
 
                            <div className="lg:col-span-7 space-y-8 text-left">
-                             <section className="text-left"><h2 className="text-4xl lg:text-5xl font-black text-slate-900 uppercase tracking-tighter mb-3 leading-none print:text-2xl break-words">{activeReceta.nombre}</h2><p className="text-slate-500 leading-relaxed italic text-base lg:text-lg print:text-xs">Producto gourmet de autor elaborado con técnicas tradicionales españolas y materias primas seleccionadas.</p></section>
+                             <section className="text-left">
+                               <h2 className="text-4xl lg:text-5xl font-black text-slate-900 uppercase tracking-tighter mb-1 leading-none print:text-2xl break-words">{activeReceta.nombre}</h2>
+                               <p className="text-lingote-gold font-black uppercase text-[10px] tracking-widest mb-3 print:text-[8px]">{activeReceta.denominacion || 'Producto Gourmet de Autor'}</p>
+                               <p className="text-slate-500 leading-relaxed italic text-sm lg:text-base print:text-xs">{activeReceta.descripcion || 'Elaborado con técnicas tradicionales españolas y materias primas seleccionadas para garantizar una experiencia gastronómica superior.'}</p>
+                             </section>
+
                              <section className="space-y-6 print:space-y-4">
-                               <div className="text-left"><h4 className="font-black uppercase text-[10px] tracking-widest text-slate-400 mb-2 leading-none print:text-[8px]">Composición</h4><p className="text-xs lg:text-sm font-bold text-slate-700 leading-snug uppercase tracking-tight print:text-[9px]">{activeReceta.ingredientes.map(i => i.nombre).join(', ')}.</p></div>
+                               <div className="text-left">
+                                 <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-400 mb-2 leading-none print:text-[8px]">Composición (RTCA)</h4>
+                                 <p className="text-xs lg:text-sm font-bold text-slate-700 leading-snug uppercase tracking-tight print:text-[9px]">
+                                   {activeReceta.ingredientes.length > 0 ? activeReceta.ingredientes.map(i => i.nombre).join(', ') : 'Ingredientes seleccionados de alta calidad.'}.
+                                 </p>
+                               </div>
                                <div className="grid grid-cols-2 gap-4 print:gap-2">
-                                 <div className="bg-red-50 p-4 rounded-2xl border border-red-100 leading-none print:p-2 print:rounded-xl text-left"><h4 className="font-black uppercase text-[9px] text-red-600 mb-1 leading-none print:text-[7px]">Alérgenos</h4><p className="text-[10px] font-black uppercase text-red-700 print:text-[8px]">Huevo, Lácteos, Gluten</p></div>
-                                 <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 leading-none print:p-2 print:rounded-xl text-left"><h4 className="font-black uppercase text-[9px] text-blue-600 mb-1 leading-none print:text-[7px]">Conservación</h4><p className="text-[10px] font-black uppercase text-blue-700 print:text-[8px]">0-5°C (10 Días)</p></div>
+                                 <div className="bg-red-50 p-4 rounded-2xl border border-red-100 leading-none print:p-2 print:rounded-xl text-left">
+                                   <h4 className="font-black uppercase text-[9px] text-red-600 mb-1 leading-none print:text-[7px]">Alérgenos</h4>
+                                   <p className="text-[10px] font-black uppercase text-red-700 print:text-[8px]">{activeReceta.alergenos || 'Huevo, Lácteos, Gluten'}</p>
+                                 </div>
+                                 <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 leading-none print:p-2 print:rounded-xl text-left">
+                                   <h4 className="font-black uppercase text-[9px] text-blue-600 mb-1 leading-none print:text-[7px]">Conservación</h4>
+                                   <p className="text-[10px] font-black uppercase text-blue-700 print:text-[8px]">{activeReceta.conservacion || '0-5°C (Refrigerado)'}</p>
+                                 </div>
+                               </div>
+
+                               {/* Sugerencia del Chef / Instrucciones */}
+                               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 text-left space-y-3 print:p-3 print:rounded-xl">
+                                  <h4 className="font-black uppercase text-[9px] text-slate-400 tracking-widest leading-none print:text-[7px]">Sugerencia del Chef (Maridaje y Regeneración)</h4>
+                                  <p className="text-[11px] font-medium text-slate-600 italic leading-relaxed print:text-[8px]">
+                                     {activeReceta.instrucciones || 'Calentar ligeramente antes de servir para potenciar los aromas. Maridar con vinos blancos jóvenes o café de especialidad.'}
+                                  </p>
                                </div>
                                <div className="border-[3px] border-slate-900 rounded-[2rem] overflow-hidden bg-white shadow-xl print:border-2 print:rounded-xl">
                                  <div className="bg-slate-900 text-white font-black text-center py-3 uppercase text-xs tracking-[0.2em] print:py-1 print:text-[8px]">Información Nutricional (por 100g)</div>
@@ -169,14 +266,50 @@ const FichasB2B = () => {
                                        <div className="flex justify-between font-black text-slate-900 mt-1 print:mt-0"><span className="text-left">Sodio</span><span>{activeReceta.nutricion?.sodio || 0}mg</span></div>
                                     </div>
                                  </div>
+                                 {/* RACIONES PARA DIABÉTICOS / NUTRICIÓN CLÍNICA */}
+                                 <div className="bg-slate-50 border-t border-slate-200 p-4 print:p-2 text-center">
+                                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2 print:mb-1">Sistema de Intercambio Clínico (1 Ración = 10g)</p>
+                                    <div className="flex justify-center gap-8 print:gap-4 text-[11px] lg:text-sm print:text-[8px] font-black uppercase italic tracking-tighter">
+                                       <div className="flex items-center gap-2"><span className="text-blue-500">HC:</span><span className="text-slate-900">{((activeReceta.nutricion?.carbohidratos || 0) / 10).toFixed(1)}</span></div>
+                                       <div className="flex items-center gap-2"><span className="text-red-500">PROT:</span><span className="text-slate-900">{((activeReceta.nutricion?.proteina || 0) / 10).toFixed(1)}</span></div>
+                                       <div className="flex items-center gap-2"><span className="text-amber-500">GRASAS:</span><span className="text-slate-900">{((activeReceta.nutricion?.grasaTotal || 0) / 10).toFixed(1)}</span></div>
+                                    </div>
+                                 </div>
                                </div>
                              </section>
-                             <div className="pt-8 flex items-center justify-between border-t border-slate-100 print:pt-4">
-                                <div className="text-left"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Procedencia</p><p className="text-xl lg:text-2xl font-black text-slate-900 uppercase leading-none print:text-sm">Costa Rica</p></div>
-                                <div className="text-right"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Peso Neto</p><p className="text-xl lg:text-2xl font-black text-slate-900 italic uppercase leading-none print:text-sm">Garantizado</p></div>
-                             </div>
                            </div>
                         </div>
+
+                        {/* SECCIÓN INFERIOR: AHORA FUERA DE LA COLUMNA 7 PARA TOMAR TODO EL ANCHO */}
+                        <div className="mt-12 pt-8 border-t-2 border-slate-900 print:mt-6 print:pt-4">
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="text-left w-full sm:w-auto">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] leading-none mb-1 print:text-[8px]">Procedencia</p>
+                              <p className="text-2xl lg:text-3xl font-black text-slate-900 uppercase leading-none print:text-lg">HECHO EN COSTA RICA</p>
+                            </div>
+
+                            <div className="text-left sm:text-center w-full sm:w-auto bg-slate-900 text-white p-5 rounded-[2rem] print:p-3 print:rounded-2xl shadow-xl">
+                              <p className="text-[9px] font-black text-lingote-gold uppercase tracking-[0.4em] leading-none mb-2 print:text-[7px]">Trazabilidad de Lote</p>
+                              <div className="flex gap-6 justify-between sm:justify-center items-center">
+                                 <div className="text-left sm:text-center">
+                                    <p className="text-[8px] font-bold opacity-40 uppercase mb-0.5">Lote</p>
+                                    <p className="text-lg font-black italic leading-none">{lote}</p>
+                                 </div>
+                                 <div className="w-px bg-white/20 h-8"></div>
+                                 <div className="text-right sm:text-center">
+                                    <p className="text-[8px] font-bold opacity-40 uppercase mb-0.5">Producción</p>
+                                    <p className="text-lg font-black italic leading-none">{new Date(fechaProduccion).toLocaleDateString('es-CR')}</p>
+                                 </div>
+                              </div>
+                            </div>
+
+                            <div className="text-left sm:text-right w-full sm:w-auto">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] leading-none mb-1 print:text-[8px]">Peso Neto</p>
+                              <p className="text-2xl lg:text-3xl font-black text-slate-900 italic uppercase leading-none print:text-lg">{activeReceta.pesoNeto || 'Garantizado'}</p>
+                            </div>
+                          </div>
+                        </div>
+
                         <footer className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-end text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em] leading-none print:pt-4 print:text-[6px]">
                            <div className="text-left leading-tight"><p>{INFO_FABRICANTE.nombre}</p><p className="mt-1 opacity-50">{INFO_FABRICANTE.direccion}</p></div>
                            <div className="text-right italic">{INFO_FABRICANTE.contacto}</div>

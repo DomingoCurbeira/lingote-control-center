@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   BarChart3, Calendar, 
   Loader2, UtensilsCrossed, Zap, IceCream, Droplet, TrendingUp,
-  Crown, AlertTriangle
+  Crown, AlertTriangle, Lightbulb
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -17,6 +17,9 @@ const AnalisisVentas = () => {
   const [data, setData] = useState<SalesData[]>([]);
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState<'mes' | 'total'>('mes');
+  
+  // Estado para el Simulador
+  const [simulatedIncrease, setSimulatedIncrease] = useState<number>(0);
 
   useEffect(() => {
     fetchVentas();
@@ -50,6 +53,67 @@ const AnalisisVentas = () => {
       setData(Object.values(aggregados).sort((a, b) => b.cantidad - a.cantidad));
     }
     setLoading(false);
+  };
+
+  const totalUnidades = data.reduce((sum, item) => sum + item.cantidad, 0);
+  const totalVentasActual = data.reduce((sum, item) => sum + item.total, 0);
+  const ingresoExtraProyectado = totalUnidades * simulatedIncrease;
+
+  const renderSimulador = () => {
+    return (
+      <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl border border-white/10 relative overflow-hidden text-left mb-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-lingote-gold/10 blur-[80px] rounded-full -mr-20 -mt-20 pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
+          
+          <div className="flex-1 space-y-4 w-full">
+             <div className="flex items-center gap-3 mb-2">
+                <Lightbulb size={24} className="text-lingote-gold" />
+                <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none">Simulador de Precios</h3>
+             </div>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+               ¿Qué pasaría si subes ligeramente los precios? Ajusta el valor y mira el impacto en tu rentabilidad basado en el volumen de ventas {periodo === 'mes' ? 'de este mes' : 'histórico'}.
+             </p>
+             
+             <div className="pt-4">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-lingote-gold mb-4">
+                   <span>Sin cambios</span>
+                   <span>Ajuste: +₡{simulatedIncrease}</span>
+                   <span>+₡500</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="500" 
+                  step="50"
+                  value={simulatedIncrease}
+                  onChange={(e) => setSimulatedIncrease(Number(e.target.value))}
+                  className="w-full accent-lingote-gold h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                />
+             </div>
+          </div>
+
+          <div className="w-full lg:w-[400px] bg-white/5 border border-white/10 p-6 rounded-3xl shrink-0 backdrop-blur-sm">
+             <div className="space-y-4">
+                <div className="flex justify-between items-center pb-4 border-b border-white/10">
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Unidades Base</span>
+                   <span className="text-lg font-black italic">{totalUnidades.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-white/10">
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Venta Actual</span>
+                   <span className="text-lg font-black italic text-slate-300">₡{totalVentasActual.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                   <span className="text-[10px] font-black text-lingote-gold uppercase tracking-widest">Ingreso Extra (100% Utilidad)</span>
+                   <span className="text-3xl font-black italic text-green-400 tracking-tighter">
+                     + ₡{ingresoExtraProyectado.toLocaleString()}
+                   </span>
+                </div>
+             </div>
+          </div>
+          
+        </div>
+      </div>
+    );
   };
 
   const renderChart = (title: string, icon: any, filterPrefix: string) => {
@@ -140,13 +204,16 @@ const AnalisisVentas = () => {
            <p className="font-black uppercase tracking-widest text-xs italic">Procesando Big Data...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mx-1">
-           {renderChart("Lingotes", <UtensilsCrossed size={20} />, "lin-")}
-           {renderChart("Promociones", <Zap size={20} />, "promo-")}
-           {renderChart("Postres", <IceCream size={20} />, "pos-")}
-           {renderChart("Extras y Salsas", <Droplet size={20} />, "beb-")}
-           {renderChart("Venta por Frasco", <TrendingUp size={20} />, "sal-240")}
-        </div>
+        <>
+          {renderSimulador()}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mx-1">
+             {renderChart("Lingotes", <UtensilsCrossed size={20} />, "lin-")}
+             {renderChart("Promociones", <Zap size={20} />, "promo-")}
+             {renderChart("Postres", <IceCream size={20} />, "pos-")}
+             {renderChart("Extras y Salsas", <Droplet size={20} />, "beb-")}
+             {renderChart("Venta por Frasco", <TrendingUp size={20} />, "sal-240")}
+          </div>
+        </>
       )}
 
       {/* LEYENDA ESTRATÉGICA */}
