@@ -41,23 +41,42 @@ export interface ProductoMaestro {
 export const MASTER_DATABASE: ProductoMaestro[] = [
   // --- LINGOTES DE VENTA (LOCAL) ---
   {
-    id: 'lingote-clasico',
-    nombre: 'Lingote Clásico',
+    id: 'lingote-base',
+    nombre: 'Lingote Base',
     categoria: 'lingotes',
     esParaRetail: false,
     denominacion: 'Tortilla de patata artesanal con cebolla',
-    descripcionCompleta: 'Nuestra tortilla artesanal, jugosa y dorada, servida sobre pan crujiente y coronada con alioli casero.',
-    ingredientes: 'Patata, Huevo pasteurizado, Aceite de girasol, Cebolla, Sal, Pan artesanal, Alioli.',
+    descripcionCompleta: 'La esencia de la tradición española. Nuestra tortilla artesanal, jugosa y dorada, servida sobre pan crujiente.',
+    ingredientes: 'Patata, Huevo pasteurizado, Aceite de girasol, Cebolla, Sal, Pan artesanal.',
     alergenos: 'CONTIENE: HUEVO, GLUTEN.',
     pesoNeto: '350 g',
     registroSanitario: 'N/A',
     vidaUtilDias: 1,
     conservacion: 'Consumo inmediato.',
     instrucciones: 'Listo para consumir.',
-    precioVenta: 1300,
+    precioVenta: 1500,
     imagen: 'clasico.webp',
     nutricion: { calorias: 144, grasaTotal: 8.0, grasaSaturada: 1.2, grasasTrans: 0, colesterol: 45, carbohidratos: 14.0, azucares: 0.8, fibraDietetica: 1.2, proteina: 4.1, sodio: 184 },
-    escandallo: { costoInsumos: 275, costoPackaging: 87, mermaPorcentaje: 5, costoFinal: 376 }
+    escandallo: { costoInsumos: 450, costoPackaging: 50, mermaPorcentaje: 0, costoFinal: 500 }
+  },
+  {
+    id: 'lingote-soberano',
+    nombre: 'Lingote Soberano',
+    categoria: 'lingotes',
+    esParaRetail: false,
+    denominacion: 'Fusión suprema de tortilla española con cerdo mechado y frijol',
+    descripcionCompleta: 'La joya de la corona. Nuestra tortilla artesanal elevada al máximo nivel con frijoles arreglados, cerdo mechado al vino blanco, pico de gallo y aguacate.',
+    ingredientes: 'Tortilla de patatas, Cerdo mechado al vino blanco, Frijoles arreglados, Tomate, Cebolla, Culantro, Aguacate.',
+    alergenos: 'CONTIENE: HUEVO, SULFITOS, GLUTEN.',
+    pesoNeto: '500 g',
+    registroSanitario: 'N/A',
+    vidaUtilDias: 1,
+    conservacion: 'Consumo inmediato.',
+    instrucciones: 'Servir caliente.',
+    precioVenta: 3500,
+    imagen: 'soberano.webp',
+    nutricion: { calorias: 210, grasaTotal: 12.5, grasaSaturada: 3.8, grasasTrans: 0, colesterol: 65, carbohidratos: 18.0, azucares: 2.5, fibraDietetica: 4.2, proteina: 18.5, sodio: 420 },
+    escandallo: { costoInsumos: 1145, costoPackaging: 150, mermaPorcentaje: 2, costoFinal: 1295 }
   },
   {
     id: 'bocata-espanol',

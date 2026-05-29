@@ -54,8 +54,9 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
     
     setBuscando(true);
     
-    // 1. Verificar si es el email del Admin
-    if (email.toLowerCase().trim() === 'domingocurbeira@gmail.com') {
+    // 1. Verificar si es un email de Administrador
+    const adminEmails = ['domingocurbeira@gmail.com', 'ellingoteespanol@gmail.com'];
+    if (adminEmails.includes(email.toLowerCase().trim())) {
       setMostrarPassword(true);
       setEsNuevo(false);
       setBuscando(false);
@@ -134,20 +135,20 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose} />
       
-      <div className="relative bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in duration-500 border border-slate-100">
-        <button onClick={onClose} className="absolute top-6 right-6 text-slate-300 hover:text-slate-500 transition-colors">
+      <div className="relative bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in duration-500 border border-slate-100 flex flex-col max-h-[90vh]">
+        <button onClick={onClose} className="absolute top-6 right-6 text-slate-300 hover:text-slate-500 transition-colors z-10 bg-white/80 backdrop-blur-sm rounded-full p-1">
           <X size={24} />
         </button>
 
-        <div className="p-10">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-slate-100 shadow-inner">
-              <img src="/logo_lingote_oficial_ligero.png" alt="Logo" className="w-14 h-14 object-contain" />
+        <div className="p-8 md:p-10 overflow-y-auto scrollbar-hide">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-inner">
+              <img src="/logo_lingote_oficial_ligero.png" alt="Logo" className="w-12 h-12 object-contain" />
             </div>
-            <h3 className="text-2xl font-black italic text-slate-800 uppercase tracking-tighter leading-none">
+            <h3 className="text-xl font-black italic text-slate-800 uppercase tracking-tighter leading-none">
               {usuario ? 'Tu Perfil' : mostrarPassword ? 'Acceso' : 'Hola,'} <span className="text-lingote-gold">{usuario ? 'VIP' : mostrarPassword ? 'Admin' : 'Bienvenido!'}</span>
             </h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">
               {usuario ? 'Gestioná tus puntos y datos' : mostrarPassword ? 'Introduce tus credenciales' : 'Identifícate para tu pedido'}
             </p>
           </div>
@@ -245,10 +246,11 @@ const ModalUsuario = ({ isOpen, onClose, isAdminLogin = false }: Props) => {
                 onClick={() => {
                   borrarUsuario();
                   onClose();
+                  notify.success("Sesión cerrada", "Has salido de tu perfil correctamente.");
                 }}
-                className="flex items-center gap-2 text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-500 transition-colors italic"
+                className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-red-50 text-red-500 font-black text-[10px] uppercase tracking-widest hover:bg-red-100 transition-all border border-red-100"
               >
-                <LogOut size={12} /> Cerrar Sesión en este equipo
+                <LogOut size={16} /> Cerrar Sesión en este equipo
               </button>
             )}
             <button 

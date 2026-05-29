@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   LayoutDashboard, TrendingUp, Wallet, AlertTriangle, 
-  CheckCircle2, ArrowUpRight, Info, Loader2, Star, MessageCircle, FileText, Download, X
+  CheckCircle2, ArrowUpRight, Info, Loader2, Star, MessageCircle, FileText, Download, X,
+  Activity, ShieldAlert, Heart
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { supabase } from '../lib/supabase';
@@ -170,10 +171,23 @@ const Dashboard = () => {
   const breakevenUnidades = contribucionPromedio > 0 ? Math.ceil(totalGastosFijos / contribucionPromedio) : 0;
   const topRentables = [...productosAnalizados].sort((a, b) => b.utilidad - a.utilidad).slice(0, 3);
 
-  // Cálculos de Escalado A4
   const isMobile = windowWidth < 768;
   const scaleFactor = isMobile ? Math.min(0.48, (windowWidth - 40) / 794) : 1;
+  const scaledHeight = isMobile ? (1123 * scaleFactor) + 100 : 'auto';
   const utilidadNetaReal = (contribucionPromedio * ventasMes.unidades) - totalGastosFijos;
+
+  // Lógica de Salud Operativa (Stop-Loss)
+  const gastosSinSueldo = totalGastosFijos - (gastos?.salarioPropietario || 0);
+  const estaCubriendoGastos = (contribucionPromedio * ventasMes.unidades) >= gastosSinSueldo;
+  const estaGanandoSueldo = utilidadNetaReal >= 0;
+
+  const getSaludConfig = () => {
+    if (estaGanandoSueldo) return { color: 'text-green-500', bg: 'bg-green-50', icon: Heart, label: 'ZONA DE GANANCIA', desc: 'El negocio es rentable. Estás pagando el local, tu sueldo y generando ahorro.' };
+    if (estaCubriendoGastos) return { color: 'text-amber-500', bg: 'bg-amber-50', icon: Activity, label: 'ZONA DE SACRIFICIO', desc: 'El local se paga solo, pero todavía no estás retirando tu sueldo completo.' };
+    return { color: 'text-red-500', bg: 'bg-red-50', icon: ShieldAlert, label: 'ZONA DE RIESGO', desc: 'Las ventas no cubren los gastos básicos del local. Revisar estrategia hoy mismo.' };
+  };
+
+  const salud = getSaludConfig();
 
   if (loading) {
     return (
@@ -223,6 +237,23 @@ const Dashboard = () => {
                <p className="text-[10px] font-black uppercase text-lingote-gold tracking-widest mb-1 italic">Venta Acumulada Mes</p>
                <h3 className="text-3xl font-black tracking-tighter italic leading-none">₡{ventasMes.bruto.toLocaleString()}</h3>
             </div>
+         </div>
+      </div>
+
+      {/* MONITOR DE SALUD OPERATIVA (STOP-LOSS) */}
+      <div className={`mx-1 p-8 rounded-[2.5rem] border ${salud.bg} border-current/10 flex flex-col md:flex-row items-center gap-6 shadow-sm`}>
+         <div className={`p-5 rounded-[2rem] bg-white shadow-xl ${salud.color} shrink-0`}>
+            <salud.icon size={40} strokeWidth={2.5} className="animate-pulse" />
+         </div>
+         <div className="text-center md:text-left space-y-1">
+            <h4 className={`text-xl font-black italic tracking-tighter uppercase ${salud.color}`}>{salud.label}</h4>
+            <p className="text-xs font-bold text-slate-500 uppercase leading-relaxed max-w-2xl">{salud.desc}</p>
+         </div>
+         <div className="ml-auto bg-white/50 backdrop-blur-sm px-6 py-4 rounded-3xl border border-white flex flex-col items-end">
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Balance Real Mayo</p>
+            <p className={`text-2xl font-black italic tracking-tighter ${utilidadNetaReal >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {utilidadNetaReal >= 0 ? '+' : ''} ₡{utilidadNetaReal.toLocaleString()}
+            </p>
          </div>
       </div>
 
@@ -386,25 +417,27 @@ const Dashboard = () => {
             
             <div 
               className="w-full flex justify-center py-10"
-              style={{ height: isMobile ? (1123 * scaleFactor) + 100 : 'auto' }}
+              style={{ height: scaledHeight }}
             >
-          <ReporteMensual 
-            ref={reporteRef}
-            mes={new Date().toLocaleDateString('es-CR', { month: 'long', year: 'numeric' }).toUpperCase()}
-            resumen={{
-              ventaBruta: ventasMes.bruto,
-              gastosFijos: totalGastosFijos,
-              utilidadNeta: Math.round(utilidadNetaReal),
-              totalPedidos: ventasMes.pedidos
-            }}
-            topProductos={topVentas}
-            clienteVIP={clientesVIP[0] ? { nombre: clientesVIP[0].nombre, puntos: clientesVIP[0].puntos_lealtad } : { nombre: "Sin Clientes", puntos: 0 }}
-            style={{ 
-              transform: isMobile ? `scale(${scaleFactor})` : 'none',
-              transformOrigin: 'top center',
-              flexShrink: 0
-            }}
-          />
+              {/* Contenedor de Escalado Visual */}
+              <div style={{ 
+                transform: isMobile ? `scale(${scaleFactor})` : 'none',
+                transformOrigin: 'top center',
+                flexShrink: 0
+              }}>
+                <ReporteMensual 
+                  ref={reporteRef}
+                  mes={new Date().toLocaleDateString('es-CR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                  resumen={{
+                    ventaBruta: ventasMes.bruto,
+                    gastosFijos: totalGastosFijos,
+                    utilidadNeta: Math.round(utilidadNetaReal),
+                    totalPedidos: ventasMes.pedidos
+                  }}
+                  topProductos={topVentas}
+                  clienteVIP={clientesVIP[0] ? { nombre: clientesVIP[0].nombre, puntos: clientesVIP[0].puntos_lealtad } : { nombre: "Sin Clientes", puntos: 0 }}
+                />
+              </div>
             </div>
           </div>
         </div>

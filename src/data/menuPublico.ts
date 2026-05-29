@@ -20,9 +20,9 @@ export interface Promocion extends ProductoMenu {
 export const MENU_LINGOTES: ProductoMenu[] = [
   {
     id: "lin-1",
-    nombre: "Lingote Clásico",
+    nombre: "Lingote clásico",
     precio: 1500,
-    descripcion: "La esencia de la tradición española. Nuestra tortilla artesanal, jugosa y dorada, servida sobre pan artesano. (Extras de salsa disponibles por ₡500).",
+    descripcion: "La esencia de la tradición española. Nuestra tortilla artesanal, jugosa y dorada, servida sobre pan artesano. (Añade tus extras favoritos por ₡500).",
     imagen: "clasico.webp",
     ingredientesBase: ["Tortilla de Patatas", "Pan Artesano"],
     alergenos: ["🥚", "🌽"],
@@ -50,6 +50,17 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     alergenos: ["🥚"],
     disponible: true,
     personalizable: false 
+  },
+  {
+    id: "lin-soberano",
+    nombre: "Lingote Soberano",
+    precio: 3500,
+    descripcion: "La joya de la corona. Nuestra tortilla artesanal elevada al máximo nivel con frijoles arreglados, cerdo mechado al vino blanco, pico de gallo y el toque de oro del aguacate nacional.",
+    imagen: "soberano.webp",
+    ingredientesBase: ["Tortilla", "Cerdo Mechado", "Frijol Arreglado", "Aguacate"],
+    alergenos: ["🥚", "🍷"],
+    disponible: true,
+    personalizable: false
   },
   {
     id: "lin-5",
@@ -210,7 +221,7 @@ export const HORARIO_LOCAL: Record<string, Horario> = {
   lunes: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
   martes: { abierto: "10:00", cerrado: "20:00", cerradoTodoElDia: false },
   miercoles: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
-  jueves: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
+  jueves: { abierto: "10:00", cerrado: "20:00", cerradoTodoElDia: false },
   viernes: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
   sabado: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
   domingo: { abierto: "10:00", cerrado: "18:00", cerradoTodoElDia: true },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3 
+  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3, ChefHat 
 } from 'lucide-react';
 import Rentabilidad from './components/Rentabilidad';
 import FichasB2B from './components/FichasB2B';
@@ -10,7 +10,9 @@ import LandingPage from './components/LandingPage';
 import Etiquetador from './components/Etiquetador';
 import Dashboard from './components/Dashboard';
 import BitacoraVentas from './components/BitacoraVentas';
+import CajaBalances from './components/CajaBalances';
 import GestionStock from './components/GestionStock';
+import MonitorCocina from './components/MonitorCocina';
 import CarteraClientes from './components/CarteraClientes';
 import InventarioMaestro from './components/InventarioMaestro';
 import DirectorioProveedores from './components/DirectorioProveedores';
@@ -32,6 +34,7 @@ function App() {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'cocina', label: 'Monitor Cocina', icon: ChefHat },
     { id: 'stock', label: 'Estado del Local', icon: Power },
     { id: 'proveedores', label: 'Proveedores', icon: Truck },
     { id: 'insumos', label: 'Maestro Insumos', icon: Database },
@@ -39,6 +42,7 @@ function App() {
     { id: 'fichas', label: 'Fichas B2B', icon: FileText },
     { id: 'sop', label: 'Códice SOP', icon: BookOpen },
     { id: 'ventas', label: 'Bitácora', icon: ClipboardList },
+    { id: 'caja', label: 'Caja y Balances', icon: Wallet },
     { id: 'graficos', label: 'Popularidad', icon: BarChart3 },
     { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
     { id: 'roi', label: 'Calculadora ROI', icon: TrendingUp },
@@ -133,12 +137,14 @@ function App() {
       <main className="flex-1 lg:ml-64 p-2 md:p-8 lg:p-12 pt-20 lg:pt-12 min-h-screen max-w-full overflow-x-hidden">
         <div className="max-w-6xl mx-auto">
           {activeTab === 'dashboard' && <Dashboard />}
+          {activeTab === 'cocina' && <MonitorCocina />}
           {activeTab === 'stock' && <GestionStock />}
           {activeTab === 'proveedores' && <DirectorioProveedores />}
           {activeTab === 'clientes' && <CarteraClientes />}
           {activeTab === 'insumos' && <InventarioMaestro />}
           {activeTab === 'etiquetas' && <Etiquetador />}
           {activeTab === 'ventas' && <BitacoraVentas />}
+          {activeTab === 'caja' && <CajaBalances />}
           {activeTab === 'graficos' && <AnalisisVentas />}
           {activeTab === 'finanzas' && <Rentabilidad />}
           {activeTab === 'fichas' && <FichasB2B />}

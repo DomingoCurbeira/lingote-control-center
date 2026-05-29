@@ -7,6 +7,7 @@ import {
 import { useCartStore } from '../store/useCartStore';
 import { useUserStore } from '../store/useUserStore';
 import { supabase } from '../lib/supabase';
+import { notify } from '../utils/notifications';
 import PagoSinpeAyuda from './PagoSinpeAyuda';
 
 interface CartDrawerProps {
@@ -50,7 +51,7 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
       .eq('telefono', usuario.telefono);
     
     if (!error) setYaEsMiembro(true);
-    window.open('https://chat.whatsapp.com/G5vXyzabc123', '_blank'); // Reemplazar con link real
+    window.open('https://chat.whatsapp.com/G4bqOHsAJPJJBJVLdlJNqu', '_blank');
   };
 
   const enfocarComprobante = () => {
@@ -74,37 +75,26 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
     const hoy = new Date().toLocaleDateString('es-CR');
     const hora = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
     
-    // Calcular puntos de lealtad (1 por cada lingote)
-    const puntosGanados = carrito.reduce((sum, item) => {
-      return item.producto.id.startsWith('lin-') ? sum + item.cantidad : sum;
-    }, 0);
+    // 1. REGISTRAR PEDIDO EN SUPABASE (Como pendiente)
+    const { error: errorPedido } = await supabase
+      .from('pedidos')
+      .insert([{
+        id: pedidoID,
+        cliente_telefono: usuario.telefono,
+        nombre_cliente: usuario.nombre,
+        items: carrito,
+        total: total,
+        metodo_pago: metodoPago,
+        comprobante: metodoPago === 'sinpe' ? comprobante : null,
+        estado: 'pendiente'
+      }]);
 
-    // Actualización Silenciosa en Supabase
-    const syncCliente = async () => {
-       // 1. Obtener puntos actuales
-       const { data } = await supabase
-         .from('clientes')
-         .select('puntos_lealtad')
-         .eq('telefono', usuario.telefono)
-         .single();
-       
-       const puntosTotales = (data?.puntos_lealtad || 0) + puntosGanados;
+    if (errorPedido) {
+      notify.error("Error al registrar comanda", "No se pudo conectar con la cocina. Intentá de nuevo.");
+      return;
+    }
 
-       // 2. Actualizar
-       await supabase
-         .from('clientes')
-         .upsert({ 
-           telefono: usuario.telefono, 
-           nombre: usuario.nombre,
-           puntos_lealtad: puntosTotales,
-           ultima_compra: new Date().toISOString()
-         });
-    };
-
-    syncCliente();
-
-    // Construcción del mensaje con emojis estándar
-    const line = "----------------------------------";
+    // 2. CONSTRUIR MENSAJE WHATSAPP
     const emojiPaella = "\u{1F958}"; 
     const emojiCheck = "\u{2705}";
     const emojiMoney = "\u{1F4B0}";
@@ -114,6 +104,8 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
     const emojiUser = "\u{1F464}";
     const emojiPhone = "\u{1F4F1}";
 
+    const line = "━━━━━━━━━━━━━━━━━━";
+    
     let mensaje = `${emojiPaella} *NUEVO PEDIDO: #${pedidoID}*\n`;
     mensaje += `${line}\n`;
     mensaje += `*EL LINGOTE ESPAÑOL*\n`;
@@ -166,7 +158,7 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
                 {metodoPago === 'sinpe' ? (
                   <div className="space-y-4">
                     <p className="text-sm font-bold text-slate-500 uppercase leading-relaxed text-center">
-                      Gracias por tu pago. Tu pedido ya está en fila de cocina y estará listo en aproximadamente <span className="text-slate-900 underline">15-20 minutos</span>.
+                      Gracias por tu pago. Tu pedido ya está en cocina (15-20 min). <span className="text-lingote-gold block mt-2">Tus puntos serán acreditados al validar el comprobante. ✨</span>
                     </p>
                     <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4">
                       <div>
@@ -182,7 +174,7 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
                 ) : (
                   <div className="space-y-4">
                     <p className="text-sm font-bold text-slate-500 uppercase leading-relaxed text-center">
-                      ¡Ingredientes reservados! Te esperamos en caja para el pago. Tu pedido tendrá <span className="text-slate-900 underline">prioridad inmediata</span> en cocina una vez abonado.
+                      ¡Ingredientes reservados! Pagá en caja para iniciar la preparación. <span className="text-lingote-gold block mt-2">Recibirás tus puntos al completar el pago. ✨</span>
                     </p>
                     <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl">
                        <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 mb-1">ID de Pedido (Reserva)</p>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
   Star, Clock, Package, 
-  UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info, Plus, ChevronRight, UserCheck 
+  UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info, Plus, ChevronRight, UserCheck, AlertTriangle,
+  Smartphone, Download, X as XIcon
 } from 'lucide-react';
 import { 
   MENU_LINGOTES, 
@@ -27,11 +28,21 @@ const LandingPage = ({ }: LandingPageProps) => {
   const [stock, setStock] = useState<Record<string, boolean>>({});
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
   const { addItem, itemsCount } = useCartStore();
   const { usuario } = useUserStore();
 
   // 1. Cargar estado inicial de stock y Suscribirse a cambios en TIEMPO REAL
   useEffect(() => {
+    // Escuchar evento de instalación PWA
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
     const fetchInitialStock = async () => {
       const { data, error } = await supabase
         .from('disponibilidad')
@@ -59,9 +70,19 @@ const LandingPage = ({ }: LandingPageProps) => {
       .subscribe();
 
     return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+    }
+  };
 
   // Lógica de Horario Dinámico
   const checkStatus = () => {
@@ -112,7 +133,7 @@ const LandingPage = ({ }: LandingPageProps) => {
            </div>
            <div className="space-y-1">
              <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic leading-none">El Lingote Español</h1>
-             <p className="text-lingote-gold font-bold uppercase tracking-[0.3em] text-[8px]">Artesanía Gastronómica Premium</p>
+             <p className="text-lingote-gold font-bold uppercase tracking-[0.3em] text-[8px]">Raíces Españolas, Corazón Tico</p>
            </div>
         </div>
 
@@ -157,13 +178,23 @@ const LandingPage = ({ }: LandingPageProps) => {
 
       {/* CONTENIDO DEL MENÚ */}
       <main className="p-4 md:p-6 space-y-6 max-w-lg mx-auto min-h-[60vh]">
-         {/* NOTA INFORMATIVA */}
-         <div className="bg-amber-50/50 border border-amber-100/50 p-4 rounded-2xl flex gap-3 items-center">
-            <Info size={16} className="text-amber-600 shrink-0" />
-            <p className="text-[9px] font-bold text-amber-800 uppercase italic leading-tight text-left">
-               Imágenes con fines ilustrativos. Los lingotes se sirven al natural; salsas y extras se venden por separado.
-            </p>
-         </div>
+         {/* NOTA INFORMATIVA O MODO TEST ADMIN */}
+         {usuario?.isAdmin ? (
+            <div className="bg-slate-900 border-2 border-lingote-gold p-4 rounded-2xl flex gap-3 items-center shadow-xl animate-pulse">
+               <AlertTriangle size={20} className="text-lingote-gold shrink-0" />
+               <div className="text-left">
+                  <p className="text-[10px] font-black text-lingote-gold uppercase italic leading-tight">Modo Administrador Activo</p>
+                  <p className="text-[8px] text-white/60 font-bold uppercase mt-0.5">Los botones de compra están habilitados para pruebas técnicas.</p>
+               </div>
+            </div>
+         ) : (
+            <div className="bg-amber-50/50 border border-amber-100/50 p-4 rounded-2xl flex gap-3 items-center">
+               <Info size={16} className="text-amber-600 shrink-0" />
+               <p className="text-[9px] font-bold text-amber-800 uppercase italic leading-tight text-left">
+                  Imágenes con fines ilustrativos. Los lingotes se sirven al natural; salsas y extras se venden por separado.
+               </p>
+            </div>
+         )}
 
          <div className="grid grid-cols-1 gap-6">
             {activeData.map((item: any) => {
@@ -208,10 +239,10 @@ const LandingPage = ({ }: LandingPageProps) => {
                            {item.precioAnterior && <p className="text-slate-300 text-[10px] font-bold line-through mt-1">Antes ₡{item.precioAnterior.toLocaleString()}</p>}
                            <p className="text-slate-500 text-[11px] leading-relaxed font-medium mt-2">{item.descripcion || item.desc}</p>
                         </div>
-                        {isAvailable && isOpen && (
+                        {((isAvailable && isOpen) || usuario?.isAdmin) && (
                           <button 
                             onClick={() => handleAddItem(item)}
-                            className="bg-slate-900 text-white p-3 rounded-2xl shadow-lg active:scale-90 transition-transform"
+                            className={`p-3 rounded-2xl shadow-lg active:scale-90 transition-transform ${usuario?.isAdmin ? 'bg-lingote-gold text-slate-900 border-2 border-slate-900' : 'bg-slate-900 text-white'}`}
                           >
                             <Plus size={20} />
                           </button>
@@ -277,6 +308,40 @@ const LandingPage = ({ }: LandingPageProps) => {
         isOpen={isUserModalOpen} 
         onClose={() => setIsUserModalOpen(false)} 
       />
+
+      {/* BANNER DE INSTALACIÓN PWA */}
+      {installPrompt && showInstallBanner && (
+        <div className="fixed bottom-24 left-0 w-full px-6 z-[60] animate-in slide-in-from-bottom-10 duration-700">
+           <div className="bg-slate-900 border-2 border-lingote-gold p-6 rounded-[2.5rem] shadow-2xl flex items-center justify-between gap-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-lingote-gold/5 blur-3xl rounded-full -mr-16 -mt-16" />
+              
+              <div className="flex items-center gap-4 relative z-10">
+                 <div className="bg-white/10 p-3 rounded-2xl text-lingote-gold shadow-lg">
+                    <Smartphone size={24} />
+                 </div>
+                 <div className="text-left">
+                    <p className="text-xs font-black text-white uppercase italic leading-none">Instalá nuestra App</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Más rápido y sin internet</p>
+                 </div>
+              </div>
+
+              <div className="flex items-center gap-3 relative z-10">
+                 <button 
+                   onClick={handleInstall}
+                   className="bg-lingote-gold text-slate-900 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg flex items-center gap-2"
+                 >
+                    <Download size={14} /> Instalar
+                 </button>
+                 <button 
+                   onClick={() => setShowInstallBanner(false)}
+                   className="p-2 text-white/30 hover:text-white transition-colors"
+                 >
+                    <XIcon size={18} />
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
 
     </div>
   );
