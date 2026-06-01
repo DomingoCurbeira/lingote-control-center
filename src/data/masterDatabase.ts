@@ -207,7 +207,7 @@ export const MASTER_DATABASE: ProductoMaestro[] = [
     vidaUtilDias: 1,
     conservacion: 'Refrigerado.',
     instrucciones: 'Servir frío.',
-    precioVenta: 1950,
+    precioVenta: 2500,
     imagen: 'torrijona.webp',
     nutricion: { calorias: 240, grasaTotal: 12.0, grasaSaturada: 6.0, grasasTrans: 0, colesterol: 55, carbohidratos: 30.0, azucares: 18.0, fibraDietetica: 0.8, proteina: 4.5, sodio: 120 },
     escandallo: { costoInsumos: 650, costoPackaging: 120, mermaPorcentaje: 0, costoFinal: 770 }

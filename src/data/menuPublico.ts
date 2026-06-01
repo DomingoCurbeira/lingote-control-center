@@ -90,7 +90,7 @@ export const MENU_POSTRES: ProductoMenu[] = [
   { 
     id: "pos-30", 
     nombre: "La Torrijona", 
-    precio: 1950, 
+    precio: 2500, 
     desc: "Torrija de Dona artesanal servida con helado de vainilla.", 
     imagen: "torrijona.webp", 
     alergenos: ["🥛", "🥚"], 
@@ -99,7 +99,7 @@ export const MENU_POSTRES: ProductoMenu[] = [
   { 
     id: "pos-31", 
     nombre: "Mestizaje Caprichoso", 
-    precio: 1950, 
+    precio: 2500, 
     desc: "Refrescante Triffle de 10oz: Capas de galleta María crujiente y cremoso artesanal de limón.", 
     imagen: "trifle.webp", 
     alergenos: ["🥛"],
