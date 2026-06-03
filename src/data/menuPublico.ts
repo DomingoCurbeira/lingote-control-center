@@ -123,7 +123,7 @@ export const MENU_PROMOCIONES: Promocion[] = [
     precio: 3500,
     precioAnterior: 4100,
     ahorro: 600,
-    desc: 'La opción más rápida: 1 Bocata Real (con salsa) + 1 Bebida Natural.',
+    desc: 'La opción más rápida: 1 Bocata Español (con salsa) + 1 Bebida Natural.',
     disponible: true,
   },
   {

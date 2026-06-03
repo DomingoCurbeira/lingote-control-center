@@ -471,6 +471,13 @@ const Rentabilidad = () => {
     }
   };
 
+  const getProfitColor = (utilidad: number) => {
+    if (utilidad >= 1000) return { bg: 'bg-green-500', text: 'text-green-600', hex: '#22c55e', label: 'Estrella' };
+    if (utilidad >= 500) return { bg: 'bg-cyan-500', text: 'text-cyan-600', hex: '#06b6d4', label: 'Saludable' };
+    if (utilidad >= 300) return { bg: 'bg-orange-500', text: 'text-orange-600', hex: '#f97316', label: 'Gancho' };
+    return { bg: 'bg-red-500', text: 'text-red-600', hex: '#ef4444', label: 'Alerta' };
+  };
+
   const getOrderedRecetas = () => {
     const ordenCategorias = ['lingotes', 'promociones', 'bebidas', 'postres', 'salsas', 'retail', 'recetas base'];
     
@@ -487,8 +494,9 @@ const Rentabilidad = () => {
       const pvpCalc = cUnidad / ((100 - (r.margenObjetivo || 0)) / 100);
       const pvpFinal = r.precioVentaManual || pvpCalc;
       const utilidad = pvpFinal - cUnidad;
+      const status = getProfitColor(utilidad);
       
-      agrupadas[cat].push({ ...r, costoUnidad: cUnidad, pvp: pvpFinal, utilidad });
+      agrupadas[cat].push({ ...r, costoUnidad: cUnidad, pvp: pvpFinal, utilidad, status });
     });
 
     // Ordenar categorías y productos dentro de ellas
@@ -703,7 +711,14 @@ const Rentabilidad = () => {
                         type="number" 
                         className="w-full bg-transparent pl-8 text-4xl font-black italic tracking-tighter text-slate-900 outline-none border-b-2 border-slate-100 focus:border-lingote-gold transition-all"
                         value={activeReceta.precioVentaManual || ''} 
-                        onChange={(e) => actualizarReceta({ precioVentaManual: Number(e.target.value) })}
+                        onChange={(e) => {
+                          const newPrice = Number(e.target.value);
+                          const newMargin = newPrice > 0 ? ((1 - (costoUnidad / newPrice)) * 100).toFixed(1) : 0;
+                          actualizarReceta({ 
+                            precioVentaManual: newPrice,
+                            margenObjetivo: Number(newMargin)
+                          });
+                        }}
                         placeholder={Math.round(pvpSugerido).toString()}
                       />
                     </div>
@@ -878,7 +893,7 @@ const Rentabilidad = () => {
                                 <td className="py-4 text-center text-[11px] text-slate-400">₡{Math.round(r.costoUnidad).toLocaleString()}</td>
                                 <td className="py-4 text-center text-xs text-slate-600">{r.margenObjetivo}%</td>
                                 <td className="py-4 text-center text-base text-slate-900 font-black">₡{Math.round(r.pvp).toLocaleString()}</td>
-                                <td className="py-4 text-right pr-8 text-xl font-black text-slate-900 font-serif">₡{Math.round(r.utilidad).toLocaleString()}</td>
+                                <td className="py-4 text-right pr-8 text-xl font-black font-serif" style={{ color: r.status.hex }}>₡{Math.round(r.utilidad).toLocaleString()}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -942,8 +957,15 @@ const Rentabilidad = () => {
                                 <td className="py-5 text-center text-[11px] text-slate-400">₡{Math.round(r.costoUnidad).toLocaleString()}</td>
                                 <td className="py-5 text-center text-xs text-slate-600">{r.margenObjetivo}%</td>
                                 <td className="py-5 text-center text-lg text-slate-900 font-black tracking-tighter">₡{Math.round(r.pvp).toLocaleString()}</td>
-                                <td className="py-5 text-right pr-8 text-2xl font-black text-slate-900 tracking-tighter font-serif">
-                                  ₡{Math.round(r.utilidad).toLocaleString()}
+                                <td className="py-5 text-right pr-8">
+                                  <div className="flex flex-col items-end">
+                                    <span className={`text-2xl font-black tracking-tighter font-serif ${r.status.text}`}>
+                                      ₡{Math.round(r.utilidad).toLocaleString()}
+                                    </span>
+                                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-slate-50 ${r.status.text}`}>
+                                      {r.status.label}
+                                    </span>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -977,8 +999,11 @@ const Rentabilidad = () => {
                              </div>
 
                              <div className="pt-4 border-t border-dashed border-slate-100 flex justify-between items-center text-left">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] italic">Utilidad Neta / Unid.</span>
-                                <span className="text-3xl font-black text-slate-900 tracking-tighter italic font-serif">₡{Math.round(r.utilidad).toLocaleString()}</span>
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] italic">Utilidad Neta / Unid.</span>
+                                  <span className={`text-[7px] font-black uppercase tracking-[0.2em] w-fit ${r.status.text}`}>{r.status.label}</span>
+                                </div>
+                                <span className={`text-3xl font-black tracking-tighter italic font-serif ${r.status.text}`}>₡{Math.round(r.utilidad).toLocaleString()}</span>
                              </div>
                           </div>
                         ))}

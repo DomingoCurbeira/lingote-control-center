@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3, ChefHat 
+  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3, ChefHat, Monitor 
 } from 'lucide-react';
 import Rentabilidad from './components/Rentabilidad';
 import FichasB2B from './components/FichasB2B';
@@ -17,6 +17,7 @@ import CarteraClientes from './components/CarteraClientes';
 import InventarioMaestro from './components/InventarioMaestro';
 import DirectorioProveedores from './components/DirectorioProveedores';
 import AnalisisVentas from './components/AnalisisVentas';
+import MenuMostrador from './components/MenuMostrador';
 import { useUserStore } from './store/useUserStore';
 import { Toaster } from 'sonner';
 
@@ -47,6 +48,7 @@ function App() {
     { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
     { id: 'roi', label: 'Calculadora ROI', icon: TrendingUp },
     { id: 'clientes', label: 'Cartera VIP', icon: Users },
+    { id: 'mostrador', label: 'Pantalla Mostrador', icon: Monitor },
   ];
 
   // Si no hay usuario logueado como Admin, mostramos la cara pública (Landing)
@@ -147,6 +149,7 @@ function App() {
           {activeTab === 'caja' && <CajaBalances />}
           {activeTab === 'graficos' && <AnalisisVentas />}
           {activeTab === 'finanzas' && <Rentabilidad />}
+          {activeTab === 'mostrador' && <MenuMostrador />}
           {activeTab === 'fichas' && <FichasB2B />}
           {activeTab === 'roi' && <CalculadoraROI />}
           {activeTab === 'sop' && <ManualesSOP />}
