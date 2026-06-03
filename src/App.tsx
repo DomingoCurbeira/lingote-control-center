@@ -33,6 +33,17 @@ function App() {
     localStorage.setItem('lingote_active_tab', activeTab);
   }, [activeTab]);
 
+  // Listener para salir del modo mostrador con la tecla ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveTab('dashboard');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'cocina', label: 'Monitor Cocina', icon: ChefHat },
@@ -54,6 +65,22 @@ function App() {
   // Si no hay usuario logueado como Admin, mostramos la cara pública (Landing)
   if (!usuario?.isAdmin) {
     return <LandingPage />;
+  }
+
+  // PANTALLA COMPLETA PARA MOSTRADOR (Sin Sidebar ni Header)
+  if (activeTab === 'mostrador') {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-black">
+        <MenuMostrador />
+        {/* Botón flotante discreto para volver al panel */}
+        <button 
+          onClick={() => setActiveTab('dashboard')}
+          className="fixed bottom-4 right-4 z-[100] p-2 bg-white/5 text-white/20 hover:bg-white/10 hover:text-white rounded-lg transition-all no-print opacity-0 hover:opacity-100"
+        >
+          <X size={20} />
+        </button>
+      </div>
+    );
   }
 
   return (
