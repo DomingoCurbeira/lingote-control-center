@@ -20,6 +20,11 @@ export interface InsumoMaestro {
   protein: number;
   fat: number;
   sodium: number;
+  saturadas?: number;
+  trans?: number;
+  colesterol?: number;
+  azucares?: number;
+  fibra?: number;
 }
 
 const InventarioMaestro = () => {
@@ -38,7 +43,12 @@ const InventarioMaestro = () => {
     carbs: 0,
     protein: 0,
     fat: 0,
-    sodium: 0
+    sodium: 0,
+    saturadas: 0,
+    trans: 0,
+    colesterol: 0,
+    azucares: 0,
+    fibra: 0
   });
 
   useEffect(() => {
@@ -327,6 +337,26 @@ const InventarioMaestro = () => {
                                              <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Sodio</label>
                                              <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.sodium} id={`edit-sodium-${insumo.id}`} />
                                           </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Azúcares</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.azucares} id={`edit-azucares-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Fibra</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.fibra} id={`edit-fibra-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">G. Sat.</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.saturadas} id={`edit-saturadas-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">G. Trans</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.trans} id={`edit-trans-${insumo.id}`} />
+                                          </div>
+                                          <div className="space-y-1">
+                                             <label className="text-[7px] font-black uppercase text-slate-400 ml-1">Colest.</label>
+                                             <input type="number" className="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl font-black text-xs" defaultValue={insumo.colesterol} id={`edit-colesterol-${insumo.id}`} />
+                                          </div>
                                           <div className="space-y-1 flex items-end">
                                             <button onClick={() => setEditId(null)} className="w-full py-2 bg-slate-200 text-slate-500 rounded-xl font-black text-[10px] uppercase">Cancelar</button>
                                           </div>
@@ -343,7 +373,17 @@ const InventarioMaestro = () => {
                                            const pr = Number((document.getElementById(`edit-prot-${insumo.id}`) as HTMLInputElement).value);
                                            const f = Number((document.getElementById(`edit-fat-${insumo.id}`) as HTMLInputElement).value);
                                            const s = Number((document.getElementById(`edit-sodium-${insumo.id}`) as HTMLInputElement).value);
-                                           actualizarInsumo(insumo.id, { nombre: n, proveedor: pv, categoria: ct, unidad: un, precio_costo: p, kcal: k, carbs: c, protein: pr, fat: f, sodium: s });
+                                           const az = Number((document.getElementById(`edit-azucares-${insumo.id}`) as HTMLInputElement).value);
+                                           const fi = Number((document.getElementById(`edit-fibra-${insumo.id}`) as HTMLInputElement).value);
+                                           const sat = Number((document.getElementById(`edit-saturadas-${insumo.id}`) as HTMLInputElement).value);
+                                           const tr = Number((document.getElementById(`edit-trans-${insumo.id}`) as HTMLInputElement).value);
+                                           const col = Number((document.getElementById(`edit-colesterol-${insumo.id}`) as HTMLInputElement).value);
+                                           
+                                           actualizarInsumo(insumo.id, { 
+                                             nombre: n, proveedor: pv, categoria: ct, unidad: un, precio_costo: p, 
+                                             kcal: k, carbs: c, protein: pr, fat: f, sodium: s,
+                                             azucares: az, fibra: fi, saturadas: sat, trans: tr, colesterol: col 
+                                           });
                                          }}
                                          className="w-full bg-slate-900 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
                                        >

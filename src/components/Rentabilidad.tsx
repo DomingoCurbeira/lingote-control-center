@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Calculator, Image as ImageIcon, 
-  Plus, Trash2, Download, Save, X, Database, Tag, Loader2, Cloud
+  Plus, Trash2, Download, Save, X, Database, Tag, Loader2, Cloud,
+  BarChart3
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { MASTER_DATABASE } from '../data/masterDatabase';
 import { supabase } from '../lib/supabase';
 import { notify } from '../utils/notifications';
@@ -38,6 +41,7 @@ interface EscandalloCompleto {
   instrucciones?: string;
   registroSanitario?: string;
   pesoNeto?: string;
+  precioVentaManual?: number;
 }
 
 interface GastosGlobales {
@@ -58,19 +62,30 @@ const Rentabilidad = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showFichaPreview, setShowFichaPreview] = useState(false);
   const [showConfigGastos, setShowConfigGastos] = useState(false);
+  const [showExecutiveTable, setShowExecutiveTable] = useState(false);
   const [insumosMaestros, setInsumosMaestros] = useState<InsumoMaestro[]>([]);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [loading, setLoading] = useState(true);
-  const [gastos, setGastos] = useState<GastosGlobales>({
-    alquiler: 520000,
-    luz: 80000,
-    agua: 20000,
-    gas: 25000,
-    internet: 30000,
-    impuestos: 15000,
-    seguros: 5000,
-    salarioPropietario: 400000,
-    metaVentasMensual: 800
+  const [gastos, setGastos] = useState<GastosGlobales>(() => {
+    const saved = localStorage.getItem('lingote_gastos_globales');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Error parsing gastos", e);
+      }
+    }
+    return {
+      alquiler: 520000,
+      luz: 80000,
+      agua: 20000,
+      gas: 25000,
+      internet: 30000,
+      impuestos: 15000,
+      seguros: 5000,
+      salarioPropietario: 400000,
+      metaVentasMensual: 800
+    };
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,11 +103,6 @@ const Rentabilidad = () => {
     const fetchCloudData = async () => {
       setLoading(true);
       
-      const savedGastos = localStorage.getItem('lingote_gastos_globales');
-      if (savedGastos) {
-        try { setGastos(JSON.parse(savedGastos)); } catch (e) { console.error("Error expenses"); }
-      }
-
       const { data: cloudRecetas, error } = await supabase
         .from('recetas')
         .select('*')
@@ -117,7 +127,8 @@ const Rentabilidad = () => {
           conservacion: r.conservacion,
           instrucciones: r.instrucciones,
           registroSanitario: r.registro_sanitario,
-          pesoNeto: r.peso_neto
+          pesoNeto: r.peso_neto,
+          precioVentaManual: r.precio_venta || undefined
         }));
         setRecetas(mapped);
         if (mapped.length > 0) setActiveId(mapped[0].id);
@@ -165,26 +176,32 @@ const Rentabilidad = () => {
           const factor = ing.cantidadReceta / 100; // Datos maestro son por 100g
           nutricionBase.calorias += (maestro.kcal || 0) * factor;
           nutricionBase.grasaTotal += (maestro.fat || 0) * factor;
+          nutricionBase.grasaSaturada += (maestro.saturadas || 0) * factor;
+          nutricionBase.grasasTrans += (maestro.trans || 0) * factor;
+          nutricionBase.colesterol += (maestro.colesterol || 0) * factor;
           nutricionBase.proteina += (maestro.protein || 0) * factor;
           nutricionBase.carbohidratos += (maestro.carbs || 0) * factor;
+          nutricionBase.azucares += (maestro.azucares || 0) * factor;
+          nutricionBase.fibraDietetica += (maestro.fibra || 0) * factor;
           nutricionBase.sodio += (maestro.sodium || 0) * factor;
-          // ... otros macros si el maestro los tuviera
         }
       });
 
       // Normalizar nutrición por porción (opcional, o por 100g de producto final)
-      // Para la Ficha B2B suele ser por 100g de producto final
       const pesoTotal = nuevosIngredientes.reduce((sum, i) => sum + i.cantidadReceta, 0);
       const factor100g = pesoTotal > 0 ? 100 / pesoTotal : 0;
 
       const nutricionFinal = {
         calorias: Math.round(nutricionBase.calorias * factor100g),
         grasaTotal: Number((nutricionBase.grasaTotal * factor100g).toFixed(1)),
+        grasaSaturada: Number((nutricionBase.grasaSaturada * factor100g).toFixed(1)),
+        grasasTrans: Number((nutricionBase.grasasTrans * factor100g).toFixed(1)),
+        colesterol: Math.round(nutricionBase.colesterol * factor100g),
         proteina: Number((nutricionBase.proteina * factor100g).toFixed(1)),
         carbohidratos: Number((nutricionBase.carbohidratos * factor100g).toFixed(1)),
-        sodio: Math.round(nutricionBase.sodio * factor100g),
-        // Mantener otros en 0 o promediar
-        grasaSaturada: 0, grasasTrans: 0, colesterol: 0, azucares: 0, fibraDietetica: 0
+        azucares: Number((nutricionBase.azucares * factor100g).toFixed(1)),
+        fibraDietetica: Number((nutricionBase.fibraDietetica * factor100g).toFixed(1)),
+        sodio: Math.round(nutricionBase.sodio * factor100g)
       };
 
       // Verificar si la nutrición calculada difiere de la guardada
@@ -235,6 +252,7 @@ const Rentabilidad = () => {
         instrucciones: receta.instrucciones,
         registro_sanitario: receta.registroSanitario,
         peso_neto: receta.pesoNeto,
+        precio_venta: receta.precioVentaManual,
         updated_at: new Date().toISOString()
       });
 
@@ -323,7 +341,7 @@ const Rentabilidad = () => {
         porciones: 1, 
         packaging: p.escandallo.costoPackaging,
         margenObjetivo: 65,
-        esProductoFinal: !['salsas', 'insumos'].includes(p.categoria),
+        esProductoFinal: !['salsas', 'insumos', 'recetas base'].includes(p.categoria),
         imagen: p.imagen.startsWith('data:') ? p.imagen : undefined,
         nutricion: p.nutricion,
         denominacion: p.denominacion,
@@ -429,19 +447,55 @@ const Rentabilidad = () => {
     }
   };
 
-  const downloadFicha = async () => {
-    if (fichaRef.current) {
-      const dataUrl = await toPng(fichaRef.current, { 
-        cacheBust: true, 
-        pixelRatio: 2,
-        width: 794,
-        height: 1123,
+  const downloadTablePDF = async () => {
+    const tableElement = document.getElementById('executive-profitability-table');
+    if (!tableElement) return;
+
+    try {
+      const canvas = await html2canvas(tableElement, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true
       });
-      const link = document.createElement('a');
-      link.download = `Ficha-${activeReceta?.nombre}.png`;
-      link.href = dataUrl;
-      link.click();
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Reporte-Rentabilidad-${new Date().toISOString().split('T')[0]}.pdf`);
+      notify.success("PDF Generado", "Se ha descargado el reporte de rentabilidad.");
+    } catch (error) {
+      notify.error("Error", "No se pudo generar el PDF.");
     }
+  };
+
+  const getOrderedRecetas = () => {
+    const ordenCategorias = ['lingotes', 'promociones', 'bebidas', 'postres', 'salsas', 'retail', 'recetas base'];
+    
+    // Agrupar
+    const agrupadas: Record<string, any[]> = {};
+    
+    recetas.forEach(r => {
+      const cat = r.categoria || 'recetas base';
+      if (!agrupadas[cat]) agrupadas[cat] = [];
+      
+      // Calcular utilidad neta para ordenar
+      const costoTotal = r.ingredientes.reduce((sum, ing) => sum + calcularCostoIngrediente(ing), 0) + r.packaging + (r.esProductoFinal ? cuotaOperativaPorUnidad * r.porciones : 0);
+      const cUnidad = costoTotal / (r.porciones || 1);
+      const pvpCalc = cUnidad / ((100 - (r.margenObjetivo || 0)) / 100);
+      const pvpFinal = r.precioVentaManual || pvpCalc;
+      const utilidad = pvpFinal - cUnidad;
+      
+      agrupadas[cat].push({ ...r, costoUnidad: cUnidad, pvp: pvpFinal, utilidad });
+    });
+
+    // Ordenar categorías y productos dentro de ellas
+    return ordenCategorias.map(cat => ({
+      categoria: cat,
+      items: (agrupadas[cat] || []).sort((a, b) => b.utilidad - a.utilidad)
+    })).filter(g => g.items.length > 0);
   };
 
   const eliminarReceta = async () => {
@@ -454,6 +508,21 @@ const Rentabilidad = () => {
         setActiveId(null);
         notify.success("Receta Eliminada", "Removida de la nube.");
       }
+    }
+  };
+
+  const downloadFicha = async () => {
+    if (fichaRef.current) {
+      const dataUrl = await toPng(fichaRef.current, { 
+        cacheBust: true, 
+        pixelRatio: 2,
+        width: 794,
+        height: 1123,
+      });
+      const link = document.createElement('a');
+      link.download = `Ficha-${activeReceta?.nombre}.png`;
+      link.href = dataUrl;
+      link.click();
     }
   };
 
@@ -476,6 +545,12 @@ const Rentabilidad = () => {
                <p className="text-lingote-gold font-bold uppercase tracking-widest text-[8px]">Sincronización Cloud</p>
             </div>
           </div>
+          <button 
+            onClick={() => setShowExecutiveTable(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-lg text-[8px] font-black uppercase text-lingote-gold hover:bg-white/20 transition-all border border-lingote-gold/20"
+          >
+            <BarChart3 size={12} /> Tabla Maestra
+          </button>
           <Calculator className="absolute -right-4 -bottom-4 text-white/5" size={100} />
         </div>
         <div className="bg-white rounded-[2.5rem] border border-lingote-accent shadow-xl overflow-hidden p-2">
@@ -522,9 +597,12 @@ const Rentabilidad = () => {
                       <div className="flex flex-wrap gap-2 md:gap-4">
                         <select className="bg-slate-50 px-4 py-2 rounded-xl font-black text-[10px] md:text-xs text-slate-400 uppercase tracking-widest border border-slate-100 outline-none focus:border-lingote-gold" value={activeReceta.categoria} onChange={(e) => actualizarReceta({ categoria: e.target.value })}>
                           <option value="lingotes">Lingotes</option>
-                          <option value="postres">Postres</option>
+                          <option value="promociones">Promociones</option>
                           <option value="bebidas">Bebidas</option>
+                          <option value="postres">Postres</option>
                           <option value="salsas">Salsas/Extras</option>
+                          <option value="retail">Retail</option>
+                          <option value="recetas base">Recetas Base</option>
                         </select>
                         <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 group">
                            <span className="text-[10px] font-black text-slate-300 uppercase italic">Venta Final:</span>
@@ -614,8 +692,32 @@ const Rentabilidad = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-1 no-print text-left">
                <div className="bg-slate-900 p-6 rounded-3xl text-white border border-white/5 shadow-xl relative overflow-hidden text-left"><p className="text-[8px] font-black uppercase text-lingote-gold tracking-widest mb-1 italic">Costo Batch</p><h3 className="text-3xl font-black italic tracking-tighter text-left">₡{Math.round(totalCosto).toLocaleString()}</h3><Database className="absolute -right-4 -bottom-4 text-white/5" size={80} /></div>
                <div className="bg-white p-6 rounded-3xl border border-lingote-accent shadow-sm text-left"><p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1 italic">Costo Unidad</p><h3 className="text-3xl font-black italic tracking-tighter text-slate-900 text-left">₡{Math.round(costoUnidad).toLocaleString()}</h3></div>
-               <div className="bg-white p-6 rounded-3xl border border-lingote-accent shadow-sm text-left"><p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1 italic">PVP Sugerido</p><h3 className="text-3xl font-black italic tracking-tighter text-slate-900 text-left">₡{Math.round(pvpSugerido).toLocaleString()}</h3></div>
-               <div className="bg-green-600 p-6 rounded-3xl text-white shadow-xl shadow-green-100 text-left"><p className="text-[8px] font-black uppercase text-white/60 tracking-widest mb-1 italic">Utilidad Neta / Unid</p><h3 className="text-3xl font-black italic tracking-tighter text-left">₡{Math.round(pvpSugerido - costoUnidad).toLocaleString()}</h3></div>
+               <div className="bg-white p-6 rounded-3xl border border-lingote-accent shadow-sm text-left relative overflow-hidden">
+                  <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1 italic">PVP Sugerido ({activeReceta.margenObjetivo}%)</p>
+                  <h3 className="text-3xl font-black italic tracking-tighter text-slate-400 text-left line-through">₡{Math.round(pvpSugerido).toLocaleString()}</h3>
+                  <div className="mt-4 pt-4 border-t border-slate-50">
+                    <p className="text-[8px] font-black uppercase text-lingote-gold tracking-widest mb-2 italic">Precio de Venta Real (Manual)</p>
+                    <div className="relative">
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-300">₡</span>
+                      <input 
+                        type="number" 
+                        className="w-full bg-transparent pl-8 text-4xl font-black italic tracking-tighter text-slate-900 outline-none border-b-2 border-slate-100 focus:border-lingote-gold transition-all"
+                        value={activeReceta.precioVentaManual || ''} 
+                        onChange={(e) => actualizarReceta({ precioVentaManual: Number(e.target.value) })}
+                        placeholder={Math.round(pvpSugerido).toString()}
+                      />
+                    </div>
+                  </div>
+               </div>
+               <div className="bg-green-600 p-6 rounded-3xl text-white shadow-xl shadow-green-100 text-left flex flex-col justify-center">
+                  <p className="text-[8px] font-black uppercase text-white/60 tracking-widest mb-1 italic">Utilidad Neta Real / Unid</p>
+                  <h3 className="text-4xl font-black italic tracking-tighter text-left">
+                    ₡{Math.round((activeReceta.precioVentaManual || pvpSugerido) - costoUnidad).toLocaleString()}
+                  </h3>
+                  <p className="text-[7px] font-bold uppercase mt-2 opacity-80">
+                    Basado en {activeReceta.precioVentaManual ? 'Precio Manual' : 'Margen Objetivo'}
+                  </p>
+               </div>
             </div>
           </>
         ) : (
@@ -700,6 +802,190 @@ const Rentabilidad = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showExecutiveTable && (
+        <div className="fixed inset-0 z-[70] flex flex-col bg-slate-900 animate-in fade-in duration-300 no-print">
+          <header className="p-6 border-b border-white/5 flex justify-between items-center bg-slate-900 text-white">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/10 rounded-2xl text-lingote-gold">
+                <BarChart3 size={24} />
+              </div>
+              <div className="text-left">
+                <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none">Tabla Maestra de Rentabilidad</h3>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Visión Ejecutiva y Análisis de Márgenes</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <button 
+                onClick={downloadTablePDF}
+                className="flex items-center gap-2 px-6 py-3 bg-lingote-gold text-slate-900 rounded-xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all italic"
+              >
+                <Download size={16} /> Exportar Reporte PDF
+              </button>
+              <button 
+                onClick={() => setShowExecutiveTable(false)}
+                className="w-12 h-12 flex items-center justify-center bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all"
+              >
+                <X size={24} />
+              </button>
+            </div>
+          </header>
+
+          <div className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">
+            {/* CONTENEDOR PARA EL PDF (Oculto en UI pero capturado por html2canvas) */}
+            <div id="executive-profitability-table" className="hidden">
+              <div className="bg-white p-12 w-[210mm] min-h-[297mm] space-y-12 text-slate-900 uppercase font-black italic">
+                {/* Resumen Superior PDF */}
+                <div className="flex justify-between items-end border-b-4 border-slate-900 pb-10">
+                  <div className="space-y-4">
+                      <img src="/logo_lingote_oficial_ligero.png" className="w-20 h-20 object-contain" alt="Logo" />
+                      <div className="text-left">
+                        <h2 className="text-3xl font-black text-slate-900 uppercase italic leading-none">Reporte de Estrategia Comercial</h2>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Actualizado a: {new Date().toLocaleDateString('es-CR')}</p>
+                      </div>
+                  </div>
+                  <div className="text-right space-y-2">
+                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Gastos Fijos Mensuales</p>
+                      <h4 className="text-4xl font-black italic text-slate-900 tracking-tighter leading-none">₡{totalGastosFijos.toLocaleString()}</h4>
+                  </div>
+                </div>
+
+                {/* Tablas por Categoría PDF */}
+                <div className="space-y-12">
+                  {getOrderedRecetas().map((grupo) => (
+                    <div key={grupo.categoria} className="space-y-6">
+                        <div className="flex items-center gap-4">
+                          <h3 className="text-sm font-black uppercase tracking-[0.4em] text-lingote-gold italic">{grupo.categoria}</h3>
+                          <div className="h-1 flex-1 bg-slate-50"></div>
+                        </div>
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-900 text-white text-[9px] tracking-widest">
+                              <th className="py-4 pl-8">Producto</th>
+                              <th className="py-4 text-center">Costo Absorbente</th>
+                              <th className="py-4 text-center">Margen %</th>
+                              <th className="py-4 text-center">PVP Sugerido</th>
+                              <th className="py-4 text-right pr-8">Utilidad Neta</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {grupo.items.map((r: any) => (
+                              <tr key={r.id}>
+                                <td className="py-4 pl-8 text-xs text-slate-800">{r.nombre}</td>
+                                <td className="py-4 text-center text-[11px] text-slate-400">₡{Math.round(r.costoUnidad).toLocaleString()}</td>
+                                <td className="py-4 text-center text-xs text-slate-600">{r.margenObjetivo}%</td>
+                                <td className="py-4 text-center text-base text-slate-900 font-black">₡{Math.round(r.pvp).toLocaleString()}</td>
+                                <td className="py-4 text-right pr-8 text-xl font-black text-slate-900 font-serif">₡{Math.round(r.utilidad).toLocaleString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                    </div>
+                  ))}
+                </div>
+                <footer className="mt-auto pt-10 border-t border-slate-100 flex justify-between items-center text-[9px] font-bold text-slate-300">
+                  <p>Generado por Lingote Control Center • v1.5 BI</p>
+                  <p>Proyección basada en {gastos.metaVentasMensual} unidades/mes</p>
+                </footer>
+              </div>
+            </div>
+
+            {/* VISTA PREVIA PARA EL USUARIO (Mobile Responsive) */}
+            <div className="max-w-6xl mx-auto space-y-12">
+               {/* Resumen Superior UI */}
+               <div className="bg-white p-6 md:p-10 rounded-[2.5rem] shadow-xl flex flex-col md:flex-row justify-between items-center gap-6 border border-white/10">
+                  <div className="text-center md:text-left space-y-2">
+                     <h2 className="text-2xl md:text-3xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Resumen de Rentabilidad</h2>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Análisis de rendimiento por unidad vendida</p>
+                  </div>
+                  <div className="bg-slate-900 px-8 py-4 rounded-3xl text-center shadow-lg">
+                     <p className="text-[8px] font-black text-lingote-gold uppercase tracking-widest mb-1 italic">Gastos de Operación</p>
+                     <h4 className="text-2xl font-black italic text-white tracking-tighter leading-none">₡{totalGastosFijos.toLocaleString()}</h4>
+                  </div>
+               </div>
+
+               {/* Lista de Productos UI */}
+               <div className="space-y-16 pb-20">
+                 {getOrderedRecetas().map((grupo) => (
+                   <div key={grupo.categoria} className="space-y-6">
+                      <div className="flex items-center gap-4 px-2">
+                        <h3 className="text-xs md:text-sm font-black uppercase tracking-[0.4em] text-lingote-gold italic">{grupo.categoria}</h3>
+                        <div className="h-px flex-1 bg-white/10"></div>
+                      </div>
+
+                      {/* VISTA TABLA (Escritorio) */}
+                      <div className="hidden md:block overflow-hidden rounded-[2.5rem] bg-white border border-white/5 shadow-2xl">
+                        <table className="w-full text-left uppercase font-black italic">
+                          <thead>
+                            <tr className="bg-slate-900 text-white text-[9px] tracking-widest">
+                              <th className="py-5 pl-8">Producto</th>
+                              <th className="py-5 text-center">Costo Absorbente</th>
+                              <th className="py-5 text-center">Margen %</th>
+                              <th className="py-5 text-center">PVP Sugerido</th>
+                              <th className="py-5 text-right pr-8">Utilidad Neta</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50">
+                            {grupo.items.map((r: any) => (
+                              <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="py-5 pl-8">
+                                  <div className="flex items-center gap-4 text-left">
+                                    <div className="w-14 h-14 rounded-2xl bg-slate-50 overflow-hidden border border-slate-100 shrink-0 shadow-inner">
+                                      {r.imagen ? <img src={r.imagen} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><ImageIcon size={20} /></div>}
+                                    </div>
+                                    <span className="text-sm text-slate-800 tracking-tight">{r.nombre}</span>
+                                  </div>
+                                </td>
+                                <td className="py-5 text-center text-[11px] text-slate-400">₡{Math.round(r.costoUnidad).toLocaleString()}</td>
+                                <td className="py-5 text-center text-xs text-slate-600">{r.margenObjetivo}%</td>
+                                <td className="py-5 text-center text-lg text-slate-900 font-black tracking-tighter">₡{Math.round(r.pvp).toLocaleString()}</td>
+                                <td className="py-5 text-right pr-8 text-2xl font-black text-slate-900 tracking-tighter font-serif">
+                                  ₡{Math.round(r.utilidad).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* VISTA CARDS (Móvil) */}
+                      <div className="md:hidden space-y-4 px-1">
+                        {grupo.items.map((r: any) => (
+                          <div key={r.id} className="bg-white p-6 rounded-[2.5rem] shadow-lg border border-slate-50 space-y-5 text-left">
+                             <div className="flex items-center gap-4 text-left">
+                                <div className="w-16 h-16 rounded-3xl bg-slate-50 overflow-hidden border border-slate-100 shrink-0 shadow-inner">
+                                  {r.imagen ? <img src={r.imagen} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><ImageIcon size={24} /></div>}
+                                </div>
+                                <div className="text-left">
+                                   <h4 className="text-lg font-black text-slate-900 uppercase italic leading-tight">{r.nombre}</h4>
+                                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Margen: {r.margenObjetivo}%</p>
+                                </div>
+                             </div>
+                             
+                             <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-slate-50 p-4 rounded-2xl text-left">
+                                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Costo Base</p>
+                                   <p className="text-base font-black text-slate-500 italic leading-none">₡{Math.round(r.costoUnidad).toLocaleString()}</p>
+                                </div>
+                                <div className="bg-slate-900 p-4 rounded-2xl text-right">
+                                   <p className="text-[8px] font-black text-lingote-gold uppercase tracking-widest mb-1 italic">PVP Sugerido</p>
+                                   <p className="text-base font-black text-white italic leading-none">₡{Math.round(r.pvp).toLocaleString()}</p>
+                                </div>
+                             </div>
+
+                             <div className="pt-4 border-t border-dashed border-slate-100 flex justify-between items-center text-left">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] italic">Utilidad Neta / Unid.</span>
+                                <span className="text-3xl font-black text-slate-900 tracking-tighter italic font-serif">₡{Math.round(r.utilidad).toLocaleString()}</span>
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+                 ))}
+               </div>
             </div>
           </div>
         </div>
