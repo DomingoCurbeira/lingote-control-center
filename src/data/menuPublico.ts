@@ -91,27 +91,18 @@ export const MENU_POSTRES: ProductoMenu[] = [
     id: "pos-30", 
     nombre: "La Torrijona", 
     precio: 2500, 
-    desc: "Torrija de Dona artesanal servida con helado de vainilla.", 
+    desc: "Dona de azúcar empapada en tres leches, pasada por huevo y frita al estilo torrija. Servida con helado de vainilla, hilos de dulce de leche y leche Pinito.", 
     imagen: "torrijona.webp", 
     alergenos: ["🥛", "🥚"], 
     disponible: true
   },
   { 
     id: "pos-31", 
-    nombre: "Mestizaje Caprichoso", 
+    nombre: "Tarta al Revés de Maduro con  Queso", 
     precio: 2500, 
-    desc: "Refrescante Triffle de 10oz: Capas de galleta María crujiente y cremoso artesanal de limón.", 
-    imagen: "trifle.webp", 
-    alergenos: ["🥛"],
-    disponible: true
-  },
-  { 
-    id: "pos-32", 
-    nombre: "Lingote Vasco", 
-    precio: 3000, 
-    desc: "Tarta de Queso Vasca, cremosa y horneada al estilo tradicional.", 
-    imagen: "vasca.webp", 
-    alergenos: ["🥛"],
+    desc: "Nuestra corona dulce: Tarta horneada densa y cremosa con queso, y una capa invertida de plátano maduro punto miel caramelizado.", 
+    imagen: "tarta-queso.webp", 
+    alergenos: ["🥛", "🥚"],
     disponible: true
   }
 ];
@@ -132,7 +123,7 @@ export const MENU_PROMOCIONES: Promocion[] = [
     precio: 5500,
     precioAnterior: 6000,
     ahorro: 500,
-    desc: 'Sabor local: 1 Lingote soberano + (Torrijona o Mestizaje Caprichoso).',
+    desc: 'Sabor local: 1 Lingote Soberano + 1 Postre.',
     disponible: true,
   },
   {
@@ -141,7 +132,7 @@ export const MENU_PROMOCIONES: Promocion[] = [
     precio: 5500,
     precioAnterior: 6100,
     ahorro: 600,
-    desc: 'Menú completo: 1 Lingote tico + 1 Bebida + (Torrijona o Mestizaje Caprichoso). (Salsa se vende por separado).',
+    desc: 'Menú completo: 1 Lingote tico + 1 Bebida + 1 Postre. (Salsa se vende por separado).',
     disponible: true,
   },
   {
@@ -150,7 +141,7 @@ export const MENU_PROMOCIONES: Promocion[] = [
     precio: 6500,
     precioAnterior: 7100,
     ahorro: 600,
-    desc: 'Para estómagos valientes: 1 Lingote Patrón + 1 Bebida + (Torrijona o Mestizaje Caprichoso).',
+    desc: 'Para estómagos valientes: 1 Lingote Patrón + 1 Bebida + 1 Postre.',
     disponible: true,
   },
   {
@@ -159,7 +150,7 @@ export const MENU_PROMOCIONES: Promocion[] = [
     precio: 7500,
     precioAnterior: 8100,
     ahorro: 600,
-    desc: 'La experiencia total para uno: 1 Lingote Supremo + 1 Bebida + (Torrijona o Mestizaje Caprichoso).',
+    desc: 'La experiencia total para uno: 1 Lingote Supremo + 1 Bebida + 1 Postre.',
     disponible: true,
   },
   {
