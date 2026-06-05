@@ -20,6 +20,7 @@ interface Ingrediente {
   cantidadReceta: number; 
   merma: number; 
   insumoMaestroId?: string; // ID para vinculación con el maestro
+  unidad?: string;
 }
 
 interface EscandalloCompleto {
@@ -153,9 +154,9 @@ const Rentabilidad = () => {
       const nuevosIngredientes = r.ingredientes.map(ing => {
         if (ing.insumoMaestroId) {
           const maestro = insumosMaestros.find(m => m.id === ing.insumoMaestroId);
-          if (maestro && maestro.precio_costo !== ing.precioCompra) {
+          if (maestro && (maestro.precio_costo !== ing.precioCompra || maestro.unidad !== ing.unidad)) {
             huboCambios = true;
-            return { ...ing, precioCompra: maestro.precio_costo };
+            return { ...ing, precioCompra: maestro.precio_costo, unidad: maestro.unidad };
           }
         }
         return ing;
@@ -317,7 +318,8 @@ const Rentabilidad = () => {
       if (coincidencia) {
         extraData = {
           insumoMaestroId: coincidencia.id,
-          precioCompra: coincidencia.precio_costo
+          precioCompra: coincidencia.precio_costo,
+          unidad: coincidencia.unidad
         };
       } else {
         extraData = { insumoMaestroId: undefined };
@@ -409,7 +411,11 @@ const Rentabilidad = () => {
   };
 
   const calcularCostoIngrediente = (ing: Ingrediente) => {
-    const costoBase = (ing.cantidadReceta / 1000) * ing.precioCompra;
+    const esUnidad = ing.unidad === 'unidad' || ing.unidad === 'unid';
+    const costoBase = esUnidad 
+      ? ing.cantidadReceta * ing.precioCompra 
+      : (ing.cantidadReceta / 1000) * ing.precioCompra;
+      
     const factorMerma = ing.merma >= 100 ? 1 : 1 / (1 - (ing.merma / 100));
     return costoBase * factorMerma;
   };
@@ -658,7 +664,7 @@ const Rentabilidad = () => {
                            <button onClick={() => actualizarReceta({ ingredientes: activeReceta.ingredientes.filter(i => i.id !== ing.id) })} className="p-2 text-slate-200 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-left">
-                           <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100/50 text-left"><p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Cant. (g/ml)</p><input type="number" className="w-full bg-transparent font-black text-slate-700 outline-none text-base tabular-nums text-left" value={ing.cantidadReceta} onChange={(e) => updateIngrediente(ing.id, { cantidadReceta: Number(e.target.value) })} /></div>
+                           <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100/50 text-left"><p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Cant. ({ing.unidad === 'unidad' || ing.unidad === 'unid' ? 'unid' : 'g/ml'})</p><input type="number" className="w-full bg-transparent font-black text-slate-700 outline-none text-base tabular-nums text-left" value={ing.cantidadReceta} onChange={(e) => updateIngrediente(ing.id, { cantidadReceta: Number(e.target.value) })} /></div>
                            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100/50 text-right"><p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Merma (%)</p><div className="flex items-center justify-end gap-1"><input type="number" min="0" max="99" className="w-10 bg-transparent font-black text-slate-500 text-center text-sm outline-none" value={ing.merma} onChange={(e) => updateIngrediente(ing.id, { merma: Math.max(0, Math.min(99, Number(e.target.value))) })} /><span className="text-[8px] text-slate-300 font-black">%</span></div></div>
                            <div className="bg-slate-50/50 p-3.5 rounded-2xl border border-dashed border-slate-200 flex flex-col justify-center text-left"><p className="text-[7px] font-black text-slate-300 uppercase tracking-widest mb-0.5">P. Kilo/Litro</p><p className="text-xs font-black text-slate-400 italic tabular-nums text-left">₡{ing.precioCompra.toLocaleString()}</p></div>
                            <div className="bg-slate-900 p-3.5 rounded-2xl shadow-lg flex flex-col justify-center items-end text-right"><p className="text-[7px] font-black text-white/30 uppercase tracking-[0.2em] mb-0.5">Subtotal</p><p className="text-base font-black text-lingote-gold italic tabular-nums text-right">₡{Math.round(calcularCostoIngrediente(ing)).toLocaleString()}</p></div>
@@ -668,7 +674,7 @@ const Rentabilidad = () => {
                   </div>
                   <div className="hidden md:block overflow-x-auto rounded-[2rem] border border-slate-50 shadow-inner">
                     <table className="w-full min-w-[700px] text-slate-700 uppercase font-black italic text-left">
-                      <thead><tr className="text-[11px] font-black uppercase text-slate-300 border-b border-slate-100 text-left tracking-widest"><th className="pb-5 pl-6 text-left">Insumo / Ingrediente</th><th className="pb-5 text-left">P. Kilo/Litro</th><th className="pb-5 text-center">Cant. Receta (g/ml)</th><th className="pb-5 text-center">% Merma</th><th className="pb-5 text-right">Subtotal</th><th className="pb-5 text-right pr-6"></th></tr></thead>
+                      <thead><tr className="text-[11px] font-black uppercase text-slate-300 border-b border-slate-100 text-left tracking-widest"><th className="pb-5 pl-6 text-left">Insumo / Ingrediente</th><th className="pb-5 text-left">P. Kilo/Litro/Unid</th><th className="pb-5 text-center">Cant. Receta</th><th className="pb-5 text-center">% Merma</th><th className="pb-5 text-right">Subtotal</th><th className="pb-5 text-right pr-6"></th></tr></thead>
                       <tbody className="divide-y divide-slate-50 text-sm font-bold text-slate-700">
                         {activeReceta.ingredientes.map((ing) => (
                           <tr key={ing.id} className="group hover:bg-slate-50/80 transition-colors text-left">
