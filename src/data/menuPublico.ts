@@ -10,6 +10,11 @@ export interface ProductoMenu {
   personalizable?: boolean;
   ingredientesBase?: string[];
   formatoRetail?: boolean;
+  vinculoIndividual?: { categoria: string; nombre: string };
+  vinculoCatering?: boolean;
+  proximamenteCatering?: boolean;
+  activo?: boolean;
+  apodo?: string;
 }
 
 export interface Promocion extends ProductoMenu {
@@ -27,7 +32,8 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     ingredientesBase: ["Tortilla de Patatas", "Pan Artesano"],
     alergenos: ["🥚", "🌽"],
     disponible: true,
-    personalizable: false 
+    personalizable: false,
+    vinculoCatering: true
   },
   {
     id: "lin-2",
@@ -38,7 +44,8 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     ingredientesBase: ["Tortilla de Patatas", "Gallo Pinto", "Maduro"],
     alergenos: ["🥚"],
     disponible: true,
-    personalizable: false
+    personalizable: false,
+    vinculoCatering: true
   },
   {
     id: "lin-3",
@@ -49,7 +56,8 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     ingredientesBase: ["Tortilla de Patatas", "Cerdo Mechado", "Aguacate"],
     alergenos: ["🥚"],
     disponible: true,
-    personalizable: false 
+    personalizable: false,
+    proximamenteCatering: true
   },
   {
     id: "lin-soberano",
@@ -60,7 +68,8 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     ingredientesBase: ["Tortilla", "Cerdo Mechado", "Frijol Arreglado", "Aguacate"],
     alergenos: ["🥚", "🍷"],
     disponible: true,
-    personalizable: false
+    personalizable: false,
+    proximamenteCatering: true
   },
   {
     id: "lin-5",
@@ -71,7 +80,8 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     ingredientesBase: ["Tortilla", "Pinto", "Cerdo", "Aguacate"],
     alergenos: ["🥚"],
     disponible: true,
-    personalizable: false 
+    personalizable: false,
+    proximamenteCatering: true
   },
   {
     id: "lin-6",
@@ -103,7 +113,8 @@ export const MENU_POSTRES: ProductoMenu[] = [
     desc: "Nuestra corona dulce: Tarta horneada densa y cremosa con queso, y una capa invertida de plátano maduro punto miel caramelizado.", 
     imagen: "tarta-queso.webp", 
     alergenos: ["🥛", "🥚"],
-    disponible: true
+    disponible: true,
+    vinculoCatering: true
   }
 ];
 
@@ -270,30 +281,72 @@ export const MENU_SALSAS: ProductoMenu[] = [
 
 export const MENU_FAMILIAR: ProductoMenu[] = [
   {
+    id: "fam-supremo",
+    nombre: "Supremo Familiar",
+    apodo: '"La Bestia"',
+    precio: 38000,
+    descripcion: "El banquete definitivo y más imponente. Un festín que lo tiene todo: Capa base de tortilla, 1.5kg de Gallo Pinto, 1kg de Cerdo Mechado y Topping de Aguacate nacional. ¡La experiencia total!",
+    imagen: "supremo-familiar.webp",
+    disponible: true,
+    activo: false,
+    personalizable: false,
+    vinculoIndividual: { categoria: 'lingotes', nombre: 'Lingote Supremo' }
+  },
+  {
     id: "fam-1",
-    nombre: "Lingote Clásico Familiar",
+    nombre: "Clásico Familiar",
+    apodo: '"El Machillo"',
     precio: 9500,
     descripcion: "Nuestra tortilla artesanal en formato gigante para 10 personas. Perfecta para compartir en familia o eventos. (Se entrega en bandeja de aluminio térmica).",
     imagen: "clasico-familiar.webp",
     disponible: true,
-    personalizable: false
+    personalizable: false,
+    vinculoIndividual: { categoria: 'lingotes', nombre: 'Lingote Clásico' }
   },
   {
     id: "fam-2",
-    nombre: "Banquete Lingote Tico",
+    nombre: "Tico Familiar",
+    apodo: '"El Pintico"',
     precio: 18000,
     descripcion: "El alma de Costa Rica para 10-12 personas. Capa base de tortilla española, 1.5kg de Gallo Pinto y Topping de Maduros. ¡Incluye un frasco de Alioli de regalía!",
     imagen: "tico-familiar.webp",
     disponible: true,
-    personalizable: false
+    personalizable: false,
+    vinculoIndividual: { categoria: 'lingotes', nombre: 'Lingote Tico' }
+  },
+  {
+    id: "fam-patron",
+    nombre: "Patrón Familiar",
+    apodo: '"El Cacique"',
+    precio: 27000,
+    descripcion: "El que manda en la mesa. 1kg de Cerdo Mechado sobre nuestra tortilla artesanal, con aguacate y cebolla encurtida. Un banquete con el respeto del jefe original.",
+    imagen: "patron-familiar.webp",
+    disponible: true,
+    activo: false,
+    personalizable: false,
+    vinculoIndividual: { categoria: 'lingotes', nombre: 'Lingote Patrón' }
+  },
+  {
+    id: "fam-soberano",
+    nombre: "Soberano Familiar",
+    apodo: '"El Tata"',
+    precio: 32000,
+    descripcion: "La máxima autoridad. Tortilla artesanal elevada con frijoles arreglados, cerdo mechado al vino blanco, pico de gallo y el toque de oro del aguacate.",
+    imagen: "soberano-familiar.webp",
+    disponible: true,
+    activo: false,
+    personalizable: false,
+    vinculoIndividual: { categoria: 'lingotes', nombre: 'Lingote Soberano' }
   },
   {
     id: "fam-3",
     nombre: "Tarta al Revés Familiar",
+    apodo: '"La Chineada"',
     precio: 27000,
     descripcion: "Nuestra joya dulce en formato XL. Mousse horneada de queso con corona de plátano maduro caramelizado. Ideal para celebraciones especiales (10-12 porciones).",
     imagen: "tarta-familiar.webp",
     disponible: true,
-    personalizable: false
+    personalizable: false,
+    vinculoIndividual: { categoria: 'postres', nombre: 'Tarta al Revés' }
   }
 ];

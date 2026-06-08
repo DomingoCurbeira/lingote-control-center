@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Star, Clock, Package, 
   UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info, Plus, ChevronRight, UserCheck, AlertTriangle,
-  Smartphone, Download, X as XIcon
+  Smartphone, Download, X as XIcon, Users
 } from 'lucide-react';
 import { 
   MENU_LINGOTES, 
@@ -160,7 +160,7 @@ const LandingPage = ({ }: LandingPageProps) => {
 
       {/* CATEGORY SELECTOR */}
       <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-100 px-2 py-3 no-print">
-         <div className="grid grid-cols-5 gap-1 max-w-lg mx-auto">
+         <div className="grid grid-cols-6 gap-1 max-w-lg mx-auto">
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -189,6 +189,13 @@ const LandingPage = ({ }: LandingPageProps) => {
                   <p className="text-[8px] text-white/60 font-bold uppercase mt-0.5">Los botones de compra están habilitados para pruebas técnicas.</p>
                </div>
             </div>
+         ) : activeCategory === 'familiar' ? (
+            <div className="bg-slate-900 border border-lingote-gold/30 p-4 rounded-2xl flex gap-3 items-center shadow-xl">
+               <Info size={16} className="text-lingote-gold shrink-0" />
+               <p className="text-[9px] font-bold text-slate-300 uppercase italic leading-tight text-left">
+                  Servicio de Catering Premium. Solicitamos 24h a 48h de anticipación para garantizar la excelencia en su evento.
+               </p>
+            </div>
          ) : (
             <div className="bg-amber-50/50 border border-amber-100/50 p-4 rounded-2xl flex gap-3 items-center">
                <Info size={16} className="text-amber-600 shrink-0" />
@@ -201,16 +208,92 @@ const LandingPage = ({ }: LandingPageProps) => {
          <div className="grid grid-cols-1 gap-6">
             {activeData.map((item: any) => {
               const isAvailable = stock[item.id] !== false;
-              
+              const isActivo = item.activo !== false;
+
+              // Si el producto no está activo y no es admin, no lo mostramos
+              if (!isActivo && !usuario?.isAdmin) return null;
+
+              if (activeCategory === 'familiar') {
+                const isBestia = item.id === 'fam-supremo';
+                
+                return (
+                  <div key={item.id} className={`group rounded-[2rem] border shadow-2xl overflow-hidden flex flex-col active:scale-[0.98] transition-all relative ${
+                    isBestia 
+                    ? 'bg-slate-900 border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.15)] ring-2 ring-amber-500/20' 
+                    : 'bg-slate-900 border-lingote-gold/30'
+                  } ${isAvailable ? '' : 'border-red-900/50 opacity-70 grayscale'}`}>
+                     
+                     {!isActivo && (
+                       <div className="absolute top-4 left-4 z-40 bg-indigo-600 text-white px-3 py-1 rounded-full font-black text-[8px] uppercase tracking-widest border border-white/20 shadow-xl">
+                         MODO PREVIEW (OCULTO AL PÚBLICO)
+                       </div>
+                     )}
+
+                     {!isAvailable && (
+                       <div className="absolute inset-0 z-30 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center">
+                          <div className="bg-red-600 text-white px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest shadow-2xl border-2 border-white">No Disponible</div>
+                       </div>
+                     )}
+
+                     <div className={`p-8 space-y-6 text-center relative z-10 flex flex-col items-center ${isBestia ? 'md:p-12' : ''}`}>
+                        <div className="flex flex-col items-center gap-3">
+                           <div className="bg-lingote-gold/10 text-lingote-gold px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest border border-lingote-gold/20 flex items-center gap-2">
+                             <Users size={12} /> EDICIÓN CATERING (10-12 PAX)
+                           </div>
+                           {item.apodo && (
+                              <div className={`font-serif italic font-medium ${isBestia ? 'text-2xl text-amber-400' : 'text-lg text-lingote-gold/80'}`}>
+                                {item.apodo}
+                              </div>
+                           )}
+                        </div>
+                        
+                        <div>
+                           <h3 className={`${isBestia ? 'text-3xl md:text-4xl' : 'text-2xl'} font-black text-white uppercase tracking-tighter leading-none italic`}>{item.nombre}</h3>
+                           <div className={`h-1 bg-lingote-gold mx-auto mt-4 rounded-full ${isBestia ? 'w-24' : 'w-12'}`}></div>
+                        </div>
+                        
+                        <p className={`text-slate-400 leading-relaxed font-medium px-4 ${isBestia ? 'text-sm' : 'text-xs'}`}>{item.descripcion || item.desc}</p>
+                        
+                        {item.vinculoIndividual && (
+                           <button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               setActiveCategory(item.vinculoIndividual.categoria);
+                               window.scrollTo({ top: 0, behavior: 'smooth' });
+                             }}
+                             className="text-[10px] font-black text-lingote-gold/60 uppercase tracking-widest hover:text-lingote-gold transition-colors flex items-center gap-1 italic"
+                           >
+                             Ver versión individual <ChevronRight size={12} />
+                           </button>
+                        )}
+
+                        <div className={`text-lingote-gold font-black border-t border-white/10 w-full pt-4 ${isBestia ? 'text-3xl' : 'text-2xl'}`}>
+                           ₡{item.precio.toLocaleString()}
+                        </div>
+
+                        {((isAvailable && isOpen) || usuario?.isAdmin) && (
+                          <button 
+                            onClick={() => handleAddItem(item)}
+                            className={`w-full mt-2 py-4 rounded-2xl shadow-[0_0_20px_rgba(255,215,0,0.2)] active:scale-95 transition-transform flex items-center justify-center gap-2 font-black uppercase text-sm ${
+                              isBestia ? 'bg-amber-500 text-slate-950 scale-105 hover:scale-110' : 'bg-lingote-gold text-slate-900'
+                            }`}
+                          >
+                            <Plus size={20} /> {isBestia ? 'RESERVAR LA BESTIA' : 'Añadir al Evento'}
+                          </button>
+                        )}
+                     </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={item.id} className={`group bg-white rounded-[2rem] border shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col active:scale-[0.98] transition-all relative ${isAvailable ? 'border-slate-100' : 'border-red-50 opacity-70 grayscale'}`}>
-                   
+
                    {!isAvailable && (
                      <div className="absolute inset-0 z-30 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center">
                         <div className="bg-red-600 text-white px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest shadow-2xl border-2 border-white">Agotado</div>
                      </div>
-                   )}
-
+                     )}
                    {item.ahorro && (
                      <div className="absolute top-4 left-4 z-20 bg-green-500 text-white px-4 py-1 rounded-full font-black text-[10px] uppercase italic shadow-lg animate-pulse">
                        Ahorras ₡{item.ahorro.toLocaleString()}
@@ -240,6 +323,26 @@ const LandingPage = ({ }: LandingPageProps) => {
                            <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight leading-none italic">{item.nombre}</h3>
                            {item.precioAnterior && <p className="text-slate-300 text-[10px] font-bold line-through mt-1">Antes ₡{item.precioAnterior.toLocaleString()}</p>}
                            <p className="text-slate-500 text-[11px] leading-relaxed font-medium mt-2">{item.descripcion || item.desc}</p>
+                           
+                           {item.vinculoCatering && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveCategory('familiar');
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className="mt-2 text-[9px] font-black text-amber-600 uppercase tracking-widest hover:text-amber-700 transition-colors flex items-center gap-1 italic"
+                              >
+                                ¿Planeas un evento especial? Disponible en Edición Catering <ChevronRight size={10} />
+                              </button>
+                           )}
+
+                           {item.proximamenteCatering && (
+                              <div className="mt-3 inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+                                <span className="w-1.5 h-1.5 bg-lingote-gold rounded-full animate-ping"></span>
+                                <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.15em]">Edición Catering Próximamente</span>
+                              </div>
+                           )}
                         </div>
                         {((isAvailable && isOpen) || usuario?.isAdmin) && (
                           <button 
