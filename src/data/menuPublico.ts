@@ -267,3 +267,33 @@ export const MENU_SALSAS: ProductoMenu[] = [
     disponible: true
   }
 ];
+
+export const MENU_FAMILIAR: ProductoMenu[] = [
+  {
+    id: "fam-1",
+    nombre: "Lingote Clásico Familiar",
+    precio: 9500,
+    descripcion: "Nuestra tortilla artesanal en formato gigante para 10 personas. Perfecta para compartir en familia o eventos. (Se entrega en bandeja de aluminio térmica).",
+    imagen: "clasico-familiar.webp",
+    disponible: true,
+    personalizable: false
+  },
+  {
+    id: "fam-2",
+    nombre: "Banquete Lingote Tico",
+    precio: 18000,
+    descripcion: "El alma de Costa Rica para 10-12 personas. Capa base de tortilla española, 1.5kg de Gallo Pinto y Topping de Maduros. ¡Incluye un frasco de Alioli de regalía!",
+    imagen: "tico-familiar.webp",
+    disponible: true,
+    personalizable: false
+  },
+  {
+    id: "fam-3",
+    nombre: "Tarta al Revés Familiar",
+    precio: 27000,
+    descripcion: "Nuestra joya dulce en formato XL. Mousse horneada de queso con corona de plátano maduro caramelizado. Ideal para celebraciones especiales (10-12 porciones).",
+    imagen: "tarta-familiar.webp",
+    disponible: true,
+    personalizable: false
+  }
+];

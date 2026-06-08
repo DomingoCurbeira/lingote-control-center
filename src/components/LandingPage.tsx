@@ -10,6 +10,7 @@ import {
   MENU_BEBIDAS, 
   MENU_POSTRES, 
   MENU_SALSAS,
+  MENU_FAMILIAR,
   HORARIO_LOCAL
 } from '../data/menuPublico';
 import { supabase } from '../lib/supabase';
@@ -108,6 +109,7 @@ const LandingPage = ({ }: LandingPageProps) => {
     { id: 'postres', label: 'Postres', icon: IceCream, data: MENU_POSTRES },
     { id: 'bebidas', label: 'Bebidas', icon: Coffee, data: MENU_BEBIDAS },
     { id: 'salsas', label: 'Extras', icon: Droplet, data: MENU_SALSAS },
+    { id: 'familiar', label: 'Eventos', icon: Package, data: MENU_FAMILIAR },
   ];
 
   const activeData = categories.find(c => c.id === activeCategory)?.data || [];
