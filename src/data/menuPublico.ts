@@ -24,8 +24,48 @@ export interface Promocion extends ProductoMenu {
 
 export const MENU_LINGOTES: ProductoMenu[] = [
   {
+    id: "lin-5",
+    nombre: "Lingote Supremo",
+    apodo: '"La Bestia"',
+    precio: 4000,
+    descripcion: "La experiencia definitiva de fusión. Un festín donde no falta nada: pinto, 100g de cerdo mechado, aguacate y tortilla. (Añade el toque final con un extra de salsa por ₡500).",
+    imagen: "supremo.webp",
+    ingredientesBase: ["Tortilla", "Pinto", "Cerdo", "Aguacate"],
+    alergenos: ["🥚"],
+    disponible: true,
+    personalizable: false,
+    proximamenteCatering: true
+  },
+  {
+    id: "lin-soberano",
+    nombre: "Lingote Soberano",
+    apodo: '"El Tata"',
+    precio: 3500,
+    descripcion: "La joya de la corona. Nuestra tortilla artesanal elevada al máximo nivel con frijoles arreglados, cerdo mechado al vino blanco, pico de gallo y el toque de oro del aguacate nacional.",
+    imagen: "soberano.webp",
+    ingredientesBase: ["Tortilla", "Cerdo Mechado", "Frijol Arreglado", "Aguacate"],
+    alergenos: ["🥚", "🍷"],
+    disponible: true,
+    personalizable: false,
+    proximamenteCatering: true
+  },
+  {
+    id: "lin-3",
+    nombre: "Lingote Patrón",
+    apodo: '"El Cacique"',
+    precio: 3000,
+    descripcion: "Para los que mandan en la mesa. Un lingote imponente cargado con 100g de cerdo mechado a fuego lento, aguacate nacional y cebolla encurtida. (Personalízalo con tu salsa favorita por ₡500).",
+    imagen: "patron.webp",
+    ingredientesBase: ["Tortilla de Patatas", "Cerdo Mechado", "Aguacate"],
+    alergenos: ["🥚"],
+    disponible: true,
+    personalizable: false,
+    proximamenteCatering: true
+  },
+  {
     id: "lin-1",
     nombre: "Lingote clásico",
+    apodo: '"El Machillo"',
     precio: 1500,
     descripcion: "La esencia de la tradición española. Nuestra tortilla artesanal, jugosa y dorada, servida con pan artesano. (Añade tus extras favoritos por ₡500).",
     imagen: "clasico.webp",
@@ -38,6 +78,7 @@ export const MENU_LINGOTES: ProductoMenu[] = [
   {
     id: "lin-2",
     nombre: "Lingote Tico",
+    apodo: '"El Pintico"',
     precio: 2000,
     descripcion: "El encuentro de dos mundos. El alma de nuestra tortilla española se abraza al sabor criollo del gallo pinto y la dulzura del plátano maduro. (Servido al natural, añade natilla por ₡500).",
     imagen: "tico.webp",
@@ -46,42 +87,6 @@ export const MENU_LINGOTES: ProductoMenu[] = [
     disponible: true,
     personalizable: false,
     vinculoCatering: true
-  },
-  {
-    id: "lin-3",
-    nombre: "Lingote Patrón",
-    precio: 3000,
-    descripcion: "Para los que mandan en la mesa. Un lingote imponente cargado con 100g de cerdo mechado a fuego lento, aguacate nacional y cebolla encurtida. (Personalízalo con tu salsa favorita por ₡500).",
-    imagen: "patron.webp",
-    ingredientesBase: ["Tortilla de Patatas", "Cerdo Mechado", "Aguacate"],
-    alergenos: ["🥚"],
-    disponible: true,
-    personalizable: false,
-    proximamenteCatering: true
-  },
-  {
-    id: "lin-soberano",
-    nombre: "Lingote Soberano",
-    precio: 3500,
-    descripcion: "La joya de la corona. Nuestra tortilla artesanal elevada al máximo nivel con frijoles arreglados, cerdo mechado al vino blanco, pico de gallo y el toque de oro del aguacate nacional.",
-    imagen: "soberano.webp",
-    ingredientesBase: ["Tortilla", "Cerdo Mechado", "Frijol Arreglado", "Aguacate"],
-    alergenos: ["🥚", "🍷"],
-    disponible: true,
-    personalizable: false,
-    proximamenteCatering: true
-  },
-  {
-    id: "lin-5",
-    nombre: "Lingote Supremo",
-    precio: 4000,
-    descripcion: "La experiencia definitiva de fusión. Un festín donde no falta nada: pinto, 100g de cerdo mechado, aguacate y tortilla. (Añade el toque final con un extra de salsa por ₡500).",
-    imagen: "supremo.webp",
-    ingredientesBase: ["Tortilla", "Pinto", "Cerdo", "Aguacate"],
-    alergenos: ["🥚"],
-    disponible: true,
-    personalizable: false,
-    proximamenteCatering: true
   },
   {
     id: "lin-6",
@@ -98,6 +103,17 @@ export const MENU_LINGOTES: ProductoMenu[] = [
 
 export const MENU_POSTRES: ProductoMenu[] = [
   { 
+    id: "pos-31", 
+    nombre: "Tarta al Revés de Maduro con Queso",
+    apodo: '"La Chineada"',
+    precio: 3000,
+    desc: "Nuestra corona dulce: Tarta horneada densa y cremosa con queso, y una capa invertida de plátano maduro punto miel caramelizado.", 
+    imagen: "tarta-queso.webp", 
+    alergenos: ["🥛", "🥚"],
+    disponible: true,
+    vinculoCatering: true
+  },
+  { 
     id: "pos-30", 
     nombre: "La Torrijona", 
     precio: 2500, 
@@ -105,16 +121,6 @@ export const MENU_POSTRES: ProductoMenu[] = [
     imagen: "torrijona.webp", 
     alergenos: ["🥛", "🥚"], 
     disponible: true
-  },
-  { 
-    id: "pos-31", 
-    nombre: "Tarta al Revés de Maduro con  Queso", 
-    precio: 2500, 
-    desc: "Nuestra corona dulce: Tarta horneada densa y cremosa con queso, y una capa invertida de plátano maduro punto miel caramelizado.", 
-    imagen: "tarta-queso.webp", 
-    alergenos: ["🥛", "🥚"],
-    disponible: true,
-    vinculoCatering: true
   }
 ];
 

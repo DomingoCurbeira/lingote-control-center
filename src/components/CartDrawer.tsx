@@ -94,6 +94,30 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
       return;
     }
 
+    // 1.1 ACTUALIZAR PUNTOS DE LEALTAD (1 punto por cada Lingote)
+    const cantidadLingotes = carrito.reduce((acc, item) => {
+      // Contamos como lingotes los productos que pertenecen a la categoría 'lingotes' o tienen 'lin-' en su ID
+      if (item.producto.id.startsWith('lin-')) {
+        return acc + item.cantidad;
+      }
+      return acc;
+    }, 0);
+
+    if (cantidadLingotes > 0) {
+      const { data: clienteActual } = await supabase
+        .from('clientes')
+        .select('puntos_lealtad')
+        .eq('telefono', usuario.telefono)
+        .single();
+      
+      const nuevosPuntos = (clienteActual?.puntos_lealtad || 0) + cantidadLingotes;
+
+      await supabase
+        .from('clientes')
+        .update({ puntos_lealtad: nuevosPuntos })
+        .eq('telefono', usuario.telefono);
+    }
+
     // 2. CONSTRUIR MENSAJE WHATSAPP
     const emojiPaella = "\u{1F958}"; 
     const emojiCheck = "\u{2705}";
@@ -121,7 +145,10 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
     mensaje += `──────────────────\n`;
     
     carrito.forEach(item => {
-      mensaje += `${emojiCheck} *${item.cantidad}x* ${item.producto.nombre.toUpperCase()}\n`;
+      const displayNombre = item.producto.apodo 
+        ? `${item.producto.nombre.toUpperCase()} (${item.producto.apodo})` 
+        : item.producto.nombre.toUpperCase();
+      mensaje += `${emojiCheck} *${item.cantidad}x* ${displayNombre}\n`;
       mensaje += `   → ₡${(item.precioTotal * item.cantidad).toLocaleString()}\n\n`;
     });
     
@@ -247,6 +274,9 @@ const CartDrawer = ({ isOpen, onClose, localOpen, onRequireUser }: CartDrawerPro
                     <div key={item.idUnico} className="bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm flex gap-4 items-center animate-in slide-in-from-right-2 duration-300">
                       <div className="flex-1 text-left">
                         <p className="font-black text-slate-800 uppercase text-xs italic leading-tight">{item.producto.nombre}</p>
+                        {item.producto.apodo && (
+                          <p className="text-[8px] font-serif italic text-amber-600/80 leading-none mt-1">{item.producto.apodo}</p>
+                        )}
                         <p className="text-[10px] font-bold text-lingote-gold mt-1">₡{(item.precioTotal * item.cantidad).toLocaleString()}</p>
                       </div>
                       <div className="flex items-center gap-3 bg-slate-50 p-1 rounded-xl border border-slate-100">

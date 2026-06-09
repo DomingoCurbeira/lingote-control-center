@@ -64,6 +64,7 @@ const Rentabilidad = () => {
   const [showFichaPreview, setShowFichaPreview] = useState(false);
   const [showConfigGastos, setShowConfigGastos] = useState(false);
   const [showExecutiveTable, setShowExecutiveTable] = useState(false);
+  const [aumentoSimulado, setAumentoSimulado] = useState(0);
   const [insumosMaestros, setInsumosMaestros] = useState<InsumoMaestro[]>([]);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [loading, setLoading] = useState(true);
@@ -228,6 +229,35 @@ const Rentabilidad = () => {
 
   const totalGastosFijos = gastos.alquiler + gastos.luz + gastos.agua + gastos.gas + gastos.internet + gastos.impuestos + gastos.seguros + gastos.salarioPropietario;
   const cuotaOperativaPorUnidad = totalGastosFijos / Math.max(1, gastos.metaVentasMensual);
+
+  // --- CÁLCULOS PARA REPORTE GLOBAL ---
+  const analisisGlobal = recetas.filter(r => r.esProductoFinal).map(r => {
+    const costoInsumos = r.ingredientes.reduce((sum, ing) => {
+        const esUnidad = ing.unidad === 'unidad' || ing.unidad === 'unid';
+        const costoBase = esUnidad ? ing.cantidadReceta * ing.precioCompra : (ing.cantidadReceta / 1000) * ing.precioCompra;
+        const factorMerma = ing.merma >= 100 ? 1 : 1 / (1 - (ing.merma / 100));
+        return sum + (costoBase * factorMerma);
+    }, 0);
+
+    const costoVariableUnidad = (costoInsumos + r.packaging) / (r.porciones || 1);
+    const pvpSugeridoBase = costoVariableUnidad / ((100 - (r.margenObjetivo || 0)) / 100);
+    const pvpFinal = (r.precioVentaManual || pvpSugeridoBase) + aumentoSimulado;
+    
+    return {
+        utilidad: pvpFinal - (costoVariableUnidad + cuotaOperativaPorUnidad),
+        margenContribucion: pvpFinal - costoVariableUnidad
+    };
+  });
+
+  const utilidadPromedio = analisisGlobal.length > 0 
+    ? analisisGlobal.reduce((sum, p) => sum + p.utilidad, 0) / analisisGlobal.length 
+    : 0;
+
+  const contribucionPromedio = analisisGlobal.length > 0 
+    ? analisisGlobal.reduce((sum, p) => sum + p.margenContribucion, 0) / analisisGlobal.length 
+    : 0;
+
+  const breakevenUnidades = contribucionPromedio > 0 ? Math.ceil(totalGastosFijos / contribucionPromedio) : 0;
 
   // --- ACCIONES CLOUD ---
 
@@ -454,26 +484,49 @@ const Rentabilidad = () => {
   };
 
   const downloadTablePDF = async () => {
-    const tableElement = document.getElementById('executive-profitability-table');
-    if (!tableElement) return;
+    const container = document.getElementById('executive-profitability-table');
+    if (!container) return;
 
     try {
-      const canvas = await html2canvas(tableElement, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true
-      });
+      notify.success("Generando PDF", "Preparando reporte multipágina...");
       
-      const imgData = canvas.toDataURL('image/png');
+      // Aseguramos que el elemento sea capturable temporalmente
+      container.style.position = 'fixed';
+      container.style.left = '0';
+      container.style.top = '0';
+      container.style.opacity = '1';
+      container.style.zIndex = '-1';
+
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const sections = container.querySelectorAll('.pdf-section');
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Reporte-Rentabilidad-${new Date().toISOString().split('T')[0]}.pdf`);
-      notify.success("PDF Generado", "Se ha descargado el reporte de rentabilidad.");
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i] as HTMLElement;
+        const canvas = await html2canvas(section, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false,
+          width: 794 // Ancho A4
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
+      
+      // Restauramos el estado oculto
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+
+      pdf.save(`Reporte-Estrategico-${new Date().toISOString().split('T')[0]}.pdf`);
+      notify.success("PDF Descargado", "El reporte completo está listo.");
     } catch (error) {
-      notify.error("Error", "No se pudo generar el PDF.");
+      console.error(error);
+      notify.error("Error", "No se pudo generar el PDF multipágina.");
     }
   };
 
@@ -498,7 +551,7 @@ const Rentabilidad = () => {
       const costoTotal = r.ingredientes.reduce((sum, ing) => sum + calcularCostoIngrediente(ing), 0) + r.packaging + (r.esProductoFinal ? cuotaOperativaPorUnidad * r.porciones : 0);
       const cUnidad = costoTotal / (r.porciones || 1);
       const pvpCalc = cUnidad / ((100 - (r.margenObjetivo || 0)) / 100);
-      const pvpFinal = r.precioVentaManual || pvpCalc;
+      const pvpFinal = (r.precioVentaManual || pvpCalc) + aumentoSimulado;
       const utilidad = pvpFinal - cUnidad;
       const status = getProfitColor(utilidad);
       
@@ -835,10 +888,27 @@ const Rentabilidad = () => {
                 <BarChart3 size={24} />
               </div>
               <div className="text-left">
-                <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none">Tabla Maestra de Rentabilidad</h3>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Visión Ejecutiva y Análisis de Márgenes</p>
+                  <h3 className="text-2xl font-black uppercase italic tracking-tighter leading-none">Tabla Maestra de Rentabilidad</h3>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Visión Ejecutiva y Análisis de Márgenes</p>
               </div>
             </div>
+
+            <div className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/10">
+               <div className="text-left">
+                  <p className="text-[8px] font-black text-lingote-gold uppercase italic mb-1">Simulador de Aumento Global</p>
+                  <div className="flex items-center gap-2">
+                     <span className="text-white font-black">+ ₡</span>
+                     <input 
+                       type="number" 
+                       step="50"
+                       className="w-24 bg-slate-800 text-white font-black p-1 rounded-lg outline-none focus:ring-1 focus:ring-lingote-gold"
+                       value={aumentoSimulado}
+                       onChange={(e) => setAumentoSimulado(Number(e.target.value))}
+                     />
+                  </div>
+               </div>
+            </div>
+
             <div className="flex gap-4">
               <button 
                 onClick={downloadTablePDF}
@@ -856,61 +926,94 @@ const Rentabilidad = () => {
           </header>
 
           <div className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">
-            {/* CONTENEDOR PARA EL PDF (Oculto en UI pero capturado por html2canvas) */}
-            <div id="executive-profitability-table" className="hidden">
-              <div className="bg-white p-12 w-[210mm] min-h-[297mm] space-y-12 text-slate-900 uppercase font-black italic">
-                {/* Resumen Superior PDF */}
-                <div className="flex justify-between items-end border-b-4 border-slate-900 pb-10">
-                  <div className="space-y-4">
-                      <img src="/logo_lingote_oficial_ligero.png" className="w-20 h-20 object-contain" alt="Logo" />
-                      <div className="text-left">
-                        <h2 className="text-3xl font-black text-slate-900 uppercase italic leading-none">Reporte de Estrategia Comercial</h2>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">Actualizado a: {new Date().toLocaleDateString('es-CR')}</p>
-                      </div>
+            {/* CONTENEDOR PARA EL PDF (Posicionado fuera de pantalla para que html2canvas pueda capturarlo) */}
+            <div id="executive-profitability-table" className="absolute -left-[9999px] top-0 pointer-events-none">
+              <div className="flex flex-col gap-0">
+                {/* PÁGINA 1: RESUMEN EJECUTIVO */}
+                <div className="pdf-section bg-white p-12 w-[210mm] min-h-[297mm] flex flex-col text-[#0f172a] uppercase font-bold italic" style={{ fontFamily: 'serif' }}>
+                  <div className="flex justify-between items-end pb-10" style={{ borderBottom: '4px solid #0f172a' }}>
+                    <div className="space-y-4">
+                        <img src="/logo_lingote_oficial_ligero.png" className="w-20 h-20 object-contain" alt="Logo" />
+                        <div className="text-left">
+                          <h2 className="text-3xl font-black uppercase italic leading-none" style={{ color: '#0f172a' }}>Reporte de Estrategia Comercial</h2>
+                          <p className="text-[10px] font-bold uppercase tracking-widest mt-1 italic" style={{ color: '#94a3b8' }}>Actualizado a: {new Date().toLocaleDateString('es-CR')}</p>
+                        </div>
+                    </div>
+                    <div className="text-right space-y-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#cbd5e1' }}>Gastos Fijos Mensuales</p>
+                        <h4 className="text-4xl font-black italic tracking-tighter leading-none" style={{ color: '#0f172a' }}>₡{totalGastosFijos.toLocaleString()}</h4>
+                    </div>
                   </div>
-                  <div className="text-right space-y-2">
-                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Gastos Fijos Mensuales</p>
-                      <h4 className="text-4xl font-black italic text-slate-900 tracking-tighter leading-none">₡{totalGastosFijos.toLocaleString()}</h4>
+
+                  <div className="flex-1 flex flex-col justify-center items-center space-y-12 py-20">
+                     <div className="text-center space-y-4">
+                        <h3 className="text-xl font-black tracking-[0.5em] text-[#d4b483]">Resumen Operativo</h3>
+                        <div className="h-1 w-24 bg-[#d4b483] mx-auto"></div>
+                     </div>
+                     
+                     <div className="grid grid-cols-2 gap-20 w-full max-w-2xl">
+                        <div className="text-left space-y-2">
+                           <p className="text-[10px] text-[#94a3b8]">Meta de Ventas</p>
+                           <p className="text-4xl font-black italic">{gastos.metaVentasMensual} Unidades</p>
+                        </div>
+                        <div className="text-right space-y-2">
+                           <p className="text-[10px] text-[#94a3b8]">Punto de Equilibrio</p>
+                           <p className="text-4xl font-black italic">{breakevenUnidades} Unidades</p>
+                        </div>
+                        <div className="text-left space-y-2">
+                           <p className="text-[10px] text-[#94a3b8]">Simulación de Aumento</p>
+                           <p className="text-4xl font-black italic text-[#d4b483]">+ ₡{aumentoSimulado.toLocaleString()}</p>
+                        </div>
+                        <div className="text-right space-y-2">
+                           <p className="text-[10px] text-[#94a3b8]">Utilidad Proyectada</p>
+                           <p className="text-4xl font-black italic" style={{ color: '#22c55e' }}>₡{Math.round(utilidadPromedio * gastos.metaVentasMensual).toLocaleString()}</p>
+                        </div>
+                     </div>
                   </div>
+
+                  <footer className="mt-auto pt-10 flex justify-between items-center text-[9px] font-bold" style={{ borderTop: '1px solid #f1f5f9', color: '#cbd5e1' }}>
+                    <p>El Lingote Español • Documento Confidencial</p>
+                    <p>Página 1 de {getOrderedRecetas().length + 1}</p>
+                  </footer>
                 </div>
 
-                {/* Tablas por Categoría PDF */}
-                <div className="space-y-12">
-                  {getOrderedRecetas().map((grupo) => (
-                    <div key={grupo.categoria} className="space-y-6">
-                        <div className="flex items-center gap-4">
-                          <h3 className="text-sm font-black uppercase tracking-[0.4em] text-lingote-gold italic">{grupo.categoria}</h3>
-                          <div className="h-1 flex-1 bg-slate-50"></div>
-                        </div>
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-900 text-white text-[9px] tracking-widest">
-                              <th className="py-4 pl-8">Producto</th>
-                              <th className="py-4 text-center">Costo Absorbente</th>
-                              <th className="py-4 text-center">Margen %</th>
-                              <th className="py-4 text-center">PVP Sugerido</th>
-                              <th className="py-4 text-right pr-8">Utilidad Neta</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {grupo.items.map((r: any) => (
-                              <tr key={r.id}>
-                                <td className="py-4 pl-8 text-xs text-slate-800">{r.nombre}</td>
-                                <td className="py-4 text-center text-[11px] text-slate-400">₡{Math.round(r.costoUnidad).toLocaleString()}</td>
-                                <td className="py-4 text-center text-xs text-slate-600">{r.margenObjetivo}%</td>
-                                <td className="py-4 text-center text-base text-slate-900 font-black">₡{Math.round(r.pvp).toLocaleString()}</td>
-                                <td className="py-4 text-right pr-8 text-xl font-black font-serif" style={{ color: r.status.hex }}>₡{Math.round(r.utilidad).toLocaleString()}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                {/* PÁGINAS SIGUIENTES: TABLAS POR CATEGORÍA */}
+                {getOrderedRecetas().map((grupo, index) => (
+                  <div key={grupo.categoria} className="pdf-section bg-white p-12 w-[210mm] min-h-[297mm] flex flex-col text-[#0f172a] uppercase font-bold italic" style={{ fontFamily: 'serif' }}>
+                    <div className="flex justify-between items-center mb-10 pb-4" style={{ borderBottom: '2px solid #0f172a' }}>
+                       <h3 className="text-xl font-black italic tracking-tighter" style={{ color: '#d4b483' }}>{grupo.categoria}</h3>
+                       <p className="text-[10px] font-bold" style={{ color: '#94a3b8' }}>Análisis de Rentabilidad</p>
                     </div>
-                  ))}
-                </div>
-                <footer className="mt-auto pt-10 border-t border-slate-100 flex justify-between items-center text-[9px] font-bold text-slate-300">
-                  <p>Generado por Lingote Control Center • v1.5 BI</p>
-                  <p>Proyección basada en {gastos.metaVentasMensual} unidades/mes</p>
-                </footer>
+
+                    <table className="w-full text-left border-collapse flex-1">
+                      <thead>
+                        <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }} className="text-[9px] tracking-widest uppercase">
+                          <th className="py-4 pl-8">Producto</th>
+                          <th className="py-4 text-center">Costo Absorbente</th>
+                          <th className="py-4 text-center">Margen %</th>
+                          <th className="py-4 text-center">PVP Sugerido</th>
+                          <th className="py-4 text-right pr-8">Utilidad Neta</th>
+                        </tr>
+                      </thead>
+                      <tbody style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        {grupo.items.map((r: any) => (
+                          <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td className="py-4 pl-8 text-xs" style={{ color: '#1e293b' }}>{r.nombre}</td>
+                            <td className="py-4 text-center text-[11px]" style={{ color: '#94a3b8' }}>₡{Math.round(r.costoUnidad).toLocaleString()}</td>
+                            <td className="py-4 text-center text-xs" style={{ color: '#475569' }}>{r.margenObjetivo}%</td>
+                            <td className="py-4 text-center text-base font-black" style={{ color: '#0f172a' }}>₡{Math.round(r.pvp).toLocaleString()}</td>
+                            <td className="py-4 text-right pr-8 text-xl font-black" style={{ color: r.status.hex }}>₡{Math.round(r.utilidad).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <footer className="mt-auto pt-10 flex justify-between items-center text-[9px] font-bold" style={{ borderTop: '1px solid #f1f5f9', color: '#cbd5e1' }}>
+                      <p>Generado por Lingote Control Center • v1.5 BI</p>
+                      <p>Página {index + 2} de {getOrderedRecetas().length + 1}</p>
+                    </footer>
+                  </div>
+                ))}
               </div>
             </div>
 
