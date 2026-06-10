@@ -114,13 +114,24 @@ export const MENU_POSTRES: ProductoMenu[] = [
     vinculoCatering: true
   },
   { 
+    id: "pos-32", 
+    nombre: "Tamal Frito en Sopa de Tres Leches",
+    apodo: '"El Reencuentro"',
+    precio: 3000,
+    desc: "Nostalgia frita: Tamal de maizena artesanal sellado al fuego, sumergido en una sopa fría de tres leches y nevado con Leche Pinito.", 
+    imagen: "tamal-frito.webp", 
+    alergenos: ["🥛", "🥚", "🌾"],
+    disponible: true
+  },
+  { 
     id: "pos-30", 
     nombre: "La Torrijona", 
     precio: 2500, 
     desc: "Dona de azúcar empapada en tres leches, pasada por huevo y frita al estilo torrija. Servida con helado de vainilla, hilos de dulce de leche y leche Pinito.", 
     imagen: "torrijona.webp", 
     alergenos: ["🥛", "🥚"], 
-    disponible: true
+    disponible: false,
+    activo: false
   }
 ];
 
@@ -173,10 +184,10 @@ export const MENU_PROMOCIONES: Promocion[] = [
   {
     id: 'promoBanqueteTres',
     nombre: 'EL BANQUETE REAL 🏰',
-    precio: 13000,
-    precioAnterior: 15000,
-    ahorro: 2000,
-    desc: 'Para compartir en grande: 2 Lingotes Supremos + 2 Torrijonas + 1 Lingote Tico ¡GRATIS! (Bebidas se venden por separado).',
+    precio: 12000,
+    precioAnterior: 15500,
+    ahorro: 3500,
+    desc: 'Para compartir en grande: 2 Lingotes Supremos + 2 Tamales Fritos + 1 Lingote Clásico ¡GRATIS! (Bebidas se venden por separado).',
     disponible: true,
   },
   {

@@ -212,6 +212,24 @@ export const MASTER_DATABASE: ProductoMaestro[] = [
     nutricion: { calorias: 240, grasaTotal: 12.0, grasaSaturada: 6.0, grasasTrans: 0, colesterol: 55, carbohidratos: 30.0, azucares: 18.0, fibraDietetica: 0.8, proteina: 4.5, sodio: 120 },
     escandallo: { costoInsumos: 650, costoPackaging: 120, mermaPorcentaje: 0, costoFinal: 770 }
   },
+  {
+    id: 'tamal-frito-local',
+    nombre: 'Tamal Frito en Sopa de Tres Leches',
+    categoria: 'postres',
+    esParaRetail: false,
+    denominacion: 'Tamal de Maizena Frito con Sopa de Tres Leches',
+    ingredientes: 'Maizena, Leche, Huevo, Azúcar, Harina de Trigo, Aceite de Palma, Leche en polvo Coronado.',
+    alergenos: 'CONTIENE: LÁCTEOS, HUEVO, GLUTEN.',
+    pesoNeto: '220 g',
+    registroSanitario: 'N/A',
+    vidaUtilDias: 1,
+    conservacion: 'Refrigerado.',
+    instrucciones: 'Servir frío con el tamal recién frito.',
+    precioVenta: 3000,
+    imagen: 'tamal-frito.webp',
+    nutricion: { calorias: 310, grasaTotal: 14.0, grasaSaturada: 7.0, grasasTrans: 0, colesterol: 60, carbohidratos: 38.0, azucares: 22.0, fibraDietetica: 0.5, proteina: 5.5, sodio: 140 },
+    escandallo: { costoInsumos: 1538, costoPackaging: 135, mermaPorcentaje: 0, costoFinal: 1673 }
+  },
 
   // --- BEBIDAS ---
   {
