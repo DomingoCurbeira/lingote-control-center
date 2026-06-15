@@ -111,6 +111,7 @@ export const MENU_POSTRES: ProductoMenu[] = [
     imagen: "tarta-queso.webp", 
     alergenos: ["🥛", "🥚"],
     disponible: true,
+    activo: true,
     vinculoCatering: true
   },
   { 
@@ -121,6 +122,7 @@ export const MENU_POSTRES: ProductoMenu[] = [
     desc: "Dados de crema pastelera fritos sumergidos en una sopa fría de tres leches y nevado con Leche Pinito.", 
     imagen: "tamal-frito.webp", 
     alergenos: ["🥛", "🥚", "🌾"],
+    activo: true,
     disponible: true
   },
   { 
