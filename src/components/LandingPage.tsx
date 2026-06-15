@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Star, Clock, Package, 
   UtensilsCrossed, Zap, Coffee, IceCream, Droplet, Info, Plus, ChevronRight, UserCheck, AlertTriangle,
-  Smartphone, Download, X as XIcon, Users, MessageCircle
+  Smartphone, Download, X as XIcon, Users
 } from 'lucide-react';
 import { 
   MENU_LINGOTES, 
