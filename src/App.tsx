@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3, ChefHat, Monitor 
+  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3, ChefHat, Monitor, Printer 
 } from 'lucide-react';
 import Rentabilidad from './components/Rentabilidad';
 import FichasB2B from './components/FichasB2B';
@@ -18,6 +18,7 @@ import InventarioMaestro from './components/InventarioMaestro';
 import DirectorioProveedores from './components/DirectorioProveedores';
 import AnalisisVentas from './components/AnalisisVentas';
 import MenuMostrador from './components/MenuMostrador';
+import GeneradorVolantes from './components/GeneradorVolantes';
 import { useUserStore } from './store/useUserStore';
 import { Toaster } from 'sonner';
 
@@ -57,6 +58,7 @@ function App() {
     { id: 'caja', label: 'Caja y Balances', icon: Wallet },
     { id: 'graficos', label: 'Popularidad', icon: BarChart3 },
     { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
+    { id: 'volantes', label: 'Volantes Vecinos', icon: Printer },
     { id: 'roi', label: 'Calculadora ROI', icon: TrendingUp },
     { id: 'clientes', label: 'Cartera VIP', icon: Users },
     { id: 'mostrador', label: 'Pantalla Mostrador', icon: Monitor },
@@ -172,6 +174,7 @@ function App() {
           {activeTab === 'clientes' && <CarteraClientes />}
           {activeTab === 'insumos' && <InventarioMaestro />}
           {activeTab === 'etiquetas' && <Etiquetador />}
+          {activeTab === 'volantes' && <GeneradorVolantes />}
           {activeTab === 'ventas' && <BitacoraVentas />}
           {activeTab === 'caja' && <CajaBalances />}
           {activeTab === 'graficos' && <AnalisisVentas />}

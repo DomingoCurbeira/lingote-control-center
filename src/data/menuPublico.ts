@@ -108,7 +108,7 @@ export const MENU_POSTRES: ProductoMenu[] = [
     apodo: '"La Chineada"',
     precio: 3000,
     desc: "Nuestra corona dulce: Tarta horneada densa y cremosa con queso, y una capa invertida de plátano maduro punto miel caramelizado.", 
-    imagen: "tarta-queso.webp", 
+    imagen: "tarta.webp", 
     alergenos: ["🥛", "🥚"],
     disponible: true,
     activo: true,
@@ -120,7 +120,7 @@ export const MENU_POSTRES: ProductoMenu[] = [
     apodo: '"El Goloso"',
     precio: 3000,
     desc: "Dados de crema pastelera fritos sumergidos en una sopa fría de tres leches y nevado con Leche Pinito.", 
-    imagen: "tamal-frito.webp", 
+    imagen: "leche.webp", 
     alergenos: ["🥛", "🥚", "🌾"],
     activo: true,
     disponible: true

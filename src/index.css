@@ -50,12 +50,18 @@
     print-color-adjust: exact !important;
   }
 
-  @page {
+  @page labelPage {
     size: 100mm 100mm;
     margin: 0;
   }
 
+  @page volantePage {
+    size: letter landscape;
+    margin: 0;
+  }
+
   #label-container {
+    page: labelPage;
     position: fixed;
     top: 0;
     left: 0;
@@ -67,4 +73,74 @@
     align-items: center;
     justify-content: center;
   }
+
+  #printable-volantes {
+    page: volantePage;
+  }
+}
+
+/* Volantes Print Override to hide app layout */
+@media print {
+  body:has(#printable-volantes) main,
+  body:has(#printable-volantes) aside,
+  body:has(#printable-volantes) header {
+    display: none !important;
+  }
+  
+  body:has(#printable-volantes) {
+    background: white !important;
+  }
+
+  #printable-volantes {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4.5mm !important;
+    padding: 5mm !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 279.4mm !important; /* carta horizontal */
+    height: 215.9mm !important;
+    background: white !important;
+    z-index: 9999999 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Custom Leaflet Map Styles */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(212, 175, 55, 0.3) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+  padding: 4px !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(212, 175, 55, 0.15) !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: #64748b !important;
+  padding: 6px 6px 0 0 !important;
+}
+
+.leaflet-bar {
+  border: none !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+  border-radius: 1rem !important;
+  overflow: hidden;
+}
+
+.leaflet-bar a {
+  background-color: #0f172a !important;
+  color: #D4AF37 !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
 }

@@ -1,6 +1,74 @@
+import { useEffect, useRef } from 'react';
 import { MapPin, Clock, Navigation, Info } from 'lucide-react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const UbicacionSeccion = () => {
+  const mapRef = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    // Si ya existe la instancia, no la recreamos
+    if (mapRef.current) return;
+
+    const lat = 9.856133;
+    const lng = -83.946012;
+
+    // Inicializar mapa
+    const map = L.map('map-container', {
+      center: [lat, lng],
+      zoom: 17,
+      zoomControl: false, // Desactivamos por defecto
+    });
+
+    // Agregar zoom en la esquina inferior derecha
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Cargar mapa base Voyager de CartoDB (elegante y minimalista)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(map);
+
+    // Icono de pin dorado personalizado
+    const goldIcon = L.divIcon({
+      html: `
+        <div class="relative flex items-center justify-center">
+          <div class="absolute w-8 h-8 bg-amber-500/40 rounded-full animate-ping"></div>
+          <div class="relative bg-slate-950 p-2 rounded-full border border-amber-500 shadow-lg flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+        </div>
+      `,
+      className: 'custom-div-icon',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+    });
+
+    // Añadir marcador y abrir Popup inicial
+    const marker = L.marker([lat, lng], { icon: goldIcon }).addTo(map);
+    marker.bindPopup(`
+      <div style="font-family: 'Inter', sans-serif; padding: 4px; min-width: 140px;">
+        <h4 style="margin: 0 0 2px 0; font-weight: 900; text-transform: uppercase; font-style: italic; color: #0f172a; font-size: 11px; letter-spacing: 0.05em;">EL LINGOTE ESPAÑOL</h4>
+        <p style="margin: 0; font-size: 9px; color: #d4af37; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">📍 Punto de Recogida</p>
+        <p style="margin: 0; font-size: 9px; color: #475569; font-weight: 500; line-height: 1.3;">Residencial Hacienda del Rey, Guadalupe, Cartago (cerca de El Guarco).</p>
+      </div>
+    `).openPopup();
+
+    mapRef.current = map;
+
+    // Limpieza al desmontar
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
   return (
     <section className="py-12 px-4 space-y-8 bg-white/80 backdrop-blur-md rounded-[3rem] border border-slate-100 shadow-xl max-w-lg mx-auto my-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="text-center space-y-2">
@@ -9,33 +77,19 @@ const UbicacionSeccion = () => {
           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Donde encontrarnos</span>
         </div>
         <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">
-          Próximamente en <br/>
-          <span className="text-lingote-gold">Cartago, Costa Rica</span>
+          Nuestra Ubicación <br/>
+          <span className="text-lingote-gold">Guadalupe, Cartago</span>
         </h2>
         <p className="text-slate-500 text-[11px] italic font-medium max-w-[280px] mx-auto uppercase tracking-wide">
-          Estamos afinando los detalles para traerte el sabor auténtico de España al corazón de la vieja metrópoli.
+          El sabor auténtico de España en Residencial Hacienda del Rey, cerca de El Guarco.
         </p>
       </div>
 
       <div className="space-y-6">
-        {/* Placeholder de Mapa Elegante */}
-        <div className="relative aspect-square rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white group">
-          <div className="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center p-8 text-center space-y-4">
-             {/* Un diseño de mapa estilizado con CSS */}
-             <div className="w-full h-full absolute inset-0 opacity-5 grayscale">
-                <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <path d="M0,20 L100,20 M0,50 L100,50 M0,80 L100,80 M20,0 L20,100 M50,0 L50,100 M80,0 L80,100" stroke="black" strokeWidth="0.5" fill="none" />
-                </svg>
-             </div>
-             <div className="bg-slate-900 p-6 rounded-full shadow-2xl shadow-slate-900/40 z-10 animate-bounce">
-                <MapPin size={40} className="text-lingote-gold" />
-             </div>
-             <div className="z-10">
-                <h4 className="font-black italic uppercase text-slate-800 tracking-tighter text-sm">Buscando el local ideal</h4>
-                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">🚧 Obra en progreso</p>
-             </div>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/10 to-transparent pointer-events-none" />
+        {/* Mapa Interactivo Leaflet */}
+        <div className="relative aspect-square rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white z-0 group">
+          <div id="map-container" className="w-full h-full" style={{ zIndex: 0 }} />
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-slate-900/10 to-transparent pointer-events-none z-10" />
         </div>
 
         {/* Info de Recogida */}
@@ -47,7 +101,7 @@ const UbicacionSeccion = () => {
              <div className="text-left">
                 <h4 className="font-black uppercase italic text-xs text-slate-800 tracking-tight">Punto de Recogida</h4>
                 <p className="text-[10px] text-slate-500 font-medium italic mt-1 leading-relaxed">
-                  Por ahora, trabajamos bajo la modalidad de <span className="font-bold text-slate-800">Take Away</span>. Una vez realices tu pedido por WhatsApp, te indicaremos el punto exacto en Cartago centro.
+                  Por ahora, trabajamos bajo la modalidad de <span className="font-bold text-slate-800">Take Away</span>. Una vez realices tu pedido por WhatsApp, te indicaremos el punto exacto en Residencial Hacienda del Rey, Guadalupe, Cartago (cerca de El Guarco).
                 </p>
              </div>
           </div>

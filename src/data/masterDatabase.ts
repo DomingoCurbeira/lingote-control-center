@@ -41,8 +41,8 @@ export interface ProductoMaestro {
 export const MASTER_DATABASE: ProductoMaestro[] = [
   // --- LINGOTES DE VENTA (LOCAL) ---
   {
-    id: 'lingote-base',
-    nombre: 'Lingote Base',
+    id: 'lingote-clasico',
+    nombre: 'Lingote Clásico',
     categoria: 'lingotes',
     esParaRetail: false,
     denominacion: 'Tortilla de patata artesanal con cebolla',
@@ -58,6 +58,63 @@ export const MASTER_DATABASE: ProductoMaestro[] = [
     imagen: 'clasico.webp',
     nutricion: { calorias: 144, grasaTotal: 8.0, grasaSaturada: 1.2, grasasTrans: 0, colesterol: 45, carbohidratos: 14.0, azucares: 0.8, fibraDietetica: 1.2, proteina: 4.1, sodio: 184 },
     escandallo: { costoInsumos: 450, costoPackaging: 50, mermaPorcentaje: 0, costoFinal: 500 }
+  },
+  {
+    id: 'lingote-tico',
+    nombre: 'Lingote Tico',
+    categoria: 'lingotes',
+    esParaRetail: false,
+    denominacion: 'Encuentro de dos mundos: tortilla española, gallo pinto y plátano maduro',
+    descripcionCompleta: 'El alma de nuestra tortilla española se abraza al sabor criollo del gallo pinto y la dulzura del plátano maduro.',
+    ingredientes: 'Patata, Huevo pasteurizado, Arroz, Frijoles, Olores naturales, Plátano maduro, Sal.',
+    alergenos: 'CONTIENE: HUEVO.',
+    pesoNeto: '450 g',
+    registroSanitario: 'N/A',
+    vidaUtilDias: 1,
+    conservacion: 'Consumo inmediato.',
+    instrucciones: 'Listo para consumir.',
+    precioVenta: 2000,
+    imagen: 'tico.webp',
+    nutricion: { calorias: 190, grasaTotal: 9.0, grasaSaturada: 1.5, grasasTrans: 0, colesterol: 45, carbohidratos: 22.0, azucares: 4.2, fibraDietetica: 2.8, proteina: 6.5, sodio: 280 },
+    escandallo: { costoInsumos: 600, costoPackaging: 50, mermaPorcentaje: 0, costoFinal: 650 }
+  },
+  {
+    id: 'lingote-patron',
+    nombre: 'Lingote Patrón',
+    categoria: 'lingotes',
+    esParaRetail: false,
+    denominacion: 'Tortilla española con cerdo mechado a fuego lento y aguacate',
+    descripcionCompleta: 'Un lingote imponente cargado con 100g de cerdo mechado a fuego lento, aguacate nacional y cebolla encurtida.',
+    ingredientes: 'Patata, Huevo pasteurizado, Posta de cerdo, Olores, Aguacate, Cebolla encurtida, Sal.',
+    alergenos: 'CONTIENE: HUEVO.',
+    pesoNeto: '480 g',
+    registroSanitario: 'N/A',
+    vidaUtilDias: 1,
+    conservacion: 'Consumo inmediato.',
+    instrucciones: 'Listo para consumir.',
+    precioVenta: 3000,
+    imagen: 'patron.webp',
+    nutricion: { calorias: 215, grasaTotal: 12.0, grasaSaturada: 3.5, grasasTrans: 0, colesterol: 60, carbohidratos: 12.0, azucares: 1.0, fibraDietetica: 2.5, proteina: 15.0, sodio: 350 },
+    escandallo: { costoInsumos: 950, costoPackaging: 50, mermaPorcentaje: 0, costoFinal: 1000 }
+  },
+  {
+    id: 'lingote-supremo',
+    nombre: 'Lingote Supremo',
+    categoria: 'lingotes',
+    esParaRetail: false,
+    denominacion: 'Experiencia definitiva de fusión: pinto, cerdo mechado, aguacate y tortilla',
+    descripcionCompleta: 'La experiencia definitiva de fusión. Un festín donde no falta nada: pinto, 100g de cerdo mechado, aguacate and tortilla.',
+    ingredientes: 'Patata, Huevo pasteurizado, Arroz, Frijoles, Posta de cerdo, Aguacate, Olores, Sal.',
+    alergenos: 'CONTIENE: HUEVO.',
+    pesoNeto: '550 g',
+    registroSanitario: 'N/A',
+    vidaUtilDias: 1,
+    conservacion: 'Consumo inmediato.',
+    instrucciones: 'Servir caliente.',
+    precioVenta: 4000,
+    imagen: 'supremo.webp',
+    nutricion: { calorias: 250, grasaTotal: 14.0, grasaSaturada: 4.2, grasasTrans: 0, colesterol: 70, carbohidratos: 24.0, azucares: 2.8, fibraDietetica: 3.5, proteina: 18.2, sodio: 450 },
+    escandallo: { costoInsumos: 1250, costoPackaging: 50, mermaPorcentaje: 0, costoFinal: 1300 }
   },
   {
     id: 'lingote-soberano',
@@ -230,6 +287,44 @@ export const MASTER_DATABASE: ProductoMaestro[] = [
     nutricion: { calorias: 310, grasaTotal: 14.0, grasaSaturada: 7.0, grasasTrans: 0, colesterol: 60, carbohidratos: 38.0, azucares: 22.0, fibraDietetica: 0.5, proteina: 5.5, sodio: 140 },
     escandallo: { costoInsumos: 1538, costoPackaging: 135, mermaPorcentaje: 0, costoFinal: 1673 }
   },
+  {
+    id: 'tarta-al-reves-maduro',
+    nombre: 'Tarta al revés cremosa de queso y plátano maduro',
+    categoria: 'postres',
+    esParaRetail: false,
+    denominacion: 'Mousse horneada de queso y plátano maduro caramelizado',
+    descripcionCompleta: 'Nuestra corona dulce: Tarta horneada densa y cremosa con queso, y una capa invertida de plátano maduro punto miel caramelizado.',
+    ingredientes: 'Queso crema, Plátano maduro, Azúcar, Huevo, Leche, Mantequilla.',
+    alergenos: 'CONTIENE: LÁCTEOS, HUEVO.',
+    pesoNeto: '180 g',
+    registroSanitario: 'N/A',
+    vidaUtilDias: 3,
+    conservacion: 'Mantener refrigerado.',
+    instrucciones: 'Servir frío.',
+    precioVenta: 3000,
+    imagen: 'tarta.webp',
+    nutricion: { calorias: 280, grasaTotal: 16.0, grasaSaturada: 9.0, grasasTrans: 0, colesterol: 80, carbohidratos: 28.0, azucares: 22.0, fibraDietetica: 1.2, proteina: 5.0, sodio: 190 },
+    escandallo: { costoInsumos: 800, costoPackaging: 120, mermaPorcentaje: 0, costoFinal: 920 }
+  },
+  {
+    id: 'leche-frita-tres-leches',
+    nombre: 'Leche frita con sopa de 3 leches',
+    categoria: 'postres',
+    esParaRetail: false,
+    denominacion: 'Dados de crema frita en sopa de tres leches y leche Pinito',
+    descripcionCompleta: 'Dados de crema pastelera fritos sumergidos en una sopa fría de tres leches y nevado con Leche Pinito.',
+    ingredientes: 'Leche, Leche condensada, Leche evaporada, Crema de leche, Huevo, Harina de trigo, Azúcar, Canela, Leche Pinito.',
+    alergenos: 'CONTIENE: LÁCTEOS, HUEVO, GLUTEN.',
+    pesoNeto: '200 g',
+    registroSanitario: 'N/A',
+    vidaUtilDias: 2,
+    conservacion: 'Mantener refrigerado.',
+    instrucciones: 'Servir frío.',
+    precioVenta: 3000,
+    imagen: 'leche.webp',
+    nutricion: { calorias: 290, grasaTotal: 11.5, grasaSaturada: 6.5, grasasTrans: 0, colesterol: 75, carbohidratos: 38.0, azucares: 28.0, fibraDietetica: 0.5, proteina: 6.2, sodio: 150 },
+    escandallo: { costoInsumos: 900, costoPackaging: 120, mermaPorcentaje: 0, costoFinal: 1020 }
+  },
 
   // --- BEBIDAS ---
   {
@@ -255,7 +350,7 @@ export const MASTER_DATABASE: ProductoMaestro[] = [
 export const INFO_FABRICANTE = {
   nombre: "EL LINGOTE ESPAÑOL",
   propietario: "Domingo (Prototipo)",
-  direccion: "Centro de Producción Gastronómica, Cartago, Costa Rica.",
+  direccion: "Residencial Hacienda del Rey, Guadalupe, Cartago (cerca de El Guarco)",
   contacto: "WhatsApp: +(506) 8000-0000",
   origen: "HECHO EN COSTA RICA"
 };
