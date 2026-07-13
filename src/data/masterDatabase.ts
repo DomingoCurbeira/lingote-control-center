@@ -349,8 +349,8 @@ export const MASTER_DATABASE: ProductoMaestro[] = [
 
 export const INFO_FABRICANTE = {
   nombre: "EL LINGOTE ESPAÑOL",
-  propietario: "Domingo (Prototipo)",
+  propietario: "Domingo, Chef Dimanse",
   direccion: "Residencial Hacienda del Rey, Guadalupe, Cartago (cerca de El Guarco)",
-  contacto: "WhatsApp: +(506) 8000-0000",
+  contacto: "WhatsApp: +(506) 72257606",
   origen: "HECHO EN COSTA RICA"
 };

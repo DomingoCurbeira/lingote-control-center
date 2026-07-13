@@ -247,12 +247,12 @@ export interface Horario {
 }
 
 export const HORARIO_LOCAL: Record<string, Horario> = {
-  lunes: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
-  martes: { abierto: "10:00", cerrado: "20:00", cerradoTodoElDia: false },
-  miercoles: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
-  jueves: { abierto: "10:00", cerrado: "20:00", cerradoTodoElDia: false },
-  viernes: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
-  sabado: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: false },
+  lunes: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: true },
+  martes: { abierto: "10:00", cerrado: "20:00", cerradoTodoElDia: true },
+  miercoles: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: true },
+  jueves: { abierto: "10:00", cerrado: "20:00", cerradoTodoElDia: true },
+  viernes: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: true },
+  sabado: { abierto: "10:00", cerrado: "16:00", cerradoTodoElDia: true },
   domingo: { abierto: "10:00", cerrado: "18:00", cerradoTodoElDia: true },
 };
 
