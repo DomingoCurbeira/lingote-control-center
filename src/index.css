@@ -79,15 +79,19 @@
   }
 }
 
-/* Volantes Print Override to hide app layout */
+/* Volantes and Triptico Print Override to hide app layout */
 @media print {
   body:has(#printable-volantes) main,
   body:has(#printable-volantes) aside,
-  body:has(#printable-volantes) header {
+  body:has(#printable-volantes) header,
+  body:has(#printable-triptico) main,
+  body:has(#printable-triptico) aside,
+  body:has(#printable-triptico) header {
     display: none !important;
   }
   
-  body:has(#printable-volantes) {
+  body:has(#printable-volantes),
+  body:has(#printable-triptico) {
     background: white !important;
   }
 
@@ -101,6 +105,18 @@
     left: 0 !important;
     width: 279.4mm !important; /* carta horizontal */
     height: 215.9mm !important;
+    background: white !important;
+    z-index: 9999999 !important;
+    box-sizing: border-box !important;
+  }
+
+  #printable-triptico {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 279.4mm !important;
+    height: 431.8mm !important; /* two landscape pages stacked vertically for print layout */
     background: white !important;
     z-index: 9999999 !important;
     box-sizing: border-box !important;

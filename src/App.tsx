@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3, ChefHat, Monitor, Printer 
+  LayoutDashboard, Tag, Wallet, FileText, Menu, X, BookOpen, TrendingUp, ClipboardList, Power, Users, Database, Truck, BarChart3, ChefHat, Printer 
 } from 'lucide-react';
 import Rentabilidad from './components/Rentabilidad';
 import FichasB2B from './components/FichasB2B';
@@ -58,10 +58,10 @@ function App() {
     { id: 'caja', label: 'Caja y Balances', icon: Wallet },
     { id: 'graficos', label: 'Popularidad', icon: BarChart3 },
     { id: 'etiquetas', label: 'Etiquetador', icon: Tag },
-    { id: 'volantes', label: 'Volantes Vecinos', icon: Printer },
+    { id: 'volantes', label: 'Marketing Vecinal', icon: Printer },
     { id: 'roi', label: 'Calculadora ROI', icon: TrendingUp },
     { id: 'clientes', label: 'Cartera VIP', icon: Users },
-    { id: 'mostrador', label: 'Pantalla Mostrador', icon: Monitor },
+    // { id: 'mostrador', label: 'Pantalla Mostrador', icon: Monitor },
   ];
 
   // Si no hay usuario logueado como Admin, mostramos la cara pública (Landing)
