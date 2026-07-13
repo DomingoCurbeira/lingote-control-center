@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import { MASTER_DATABASE } from '../data/masterDatabase';
 import { supabase } from '../lib/supabase';
 import { notify } from '../utils/notifications';

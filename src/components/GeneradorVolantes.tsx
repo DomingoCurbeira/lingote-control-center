@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Printer, Sparkles, QrCode, Layout, Eye, Info, Download } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import { MASTER_DATABASE } from '../data/masterDatabase';
-import { MENU_PROMOCIONES } from '../data/menuPublico';
+import { MENU_PROMOCIONES, MENU_FAMILIAR } from '../data/menuPublico';
 
 // Definición de Temas Visuales
 interface TemaDiseno {
@@ -53,7 +53,7 @@ const TEMAS: TemaDiseno[] = [
     bgColor: '#FAF8F5',
     borderColor: 'rgba(139, 92, 26, 0.2)',
     textColor: '#1C1917',    // stone-900
-    accentText: '#8B5A2B',   // amber-800
+    accentText: '#fbf9f6',   // amber-800
     badgeBg: 'rgba(139, 92, 26, 0.1)',
     badgeText: '#5C3A21',
     footerBg: '#1A0F0A',
@@ -111,20 +111,20 @@ export default function GeneradorVolantes() {
   // Dirección física predeterminada que acordamos
   const direccionReferencia = 'Residencial Hacienda del Rey, Guadalupe, Cartago (cerca de El Guarco)';
 
-  const volanteRef = useRef<HTMLDivElement | null>(null);
-  const tripticoRef = useRef<HTMLDivElement | null>(null);
+  const volanteCaptureRef = useRef<HTMLDivElement | null>(null);
+  const tripticoCaptureRef = useRef<HTMLDivElement | null>(null);
   const [descargando, setDescargando] = useState(false);
 
   const descargarImagen = async () => {
-    const targetRef = marketingMode === 'volante' ? volanteRef : tripticoRef;
+    const targetRef = marketingMode === 'volante' ? volanteCaptureRef : tripticoCaptureRef;
     if (targetRef.current) {
       setDescargando(true);
       try {
-        const captureWidth = marketingMode === 'volante' ? 352 : 1056;
-        const captureHeight = 756;
+        const captureWidth = marketingMode === 'volante' ? 352 : 1120; // 1120px para tríptico completo con márgenes
+        const captureHeight = marketingMode === 'volante' ? 756 : 788; // 788px para tríptico con márgenes
 
         const canvas = await html2canvas(targetRef.current, {
-          scale: marketingMode === 'volante' ? 3 : 2, // 3x para volantes, 2x para tríptico
+          scale: 2, // Calidad óptima
           backgroundColor: null, // Transparencia en esquinas redondeadas
           useCORS: true,
           logging: false,
@@ -151,14 +151,14 @@ export default function GeneradorVolantes() {
   };
 
   // Renderizador de un volante individual para reusar en pantalla y en la hoja de impresión
-  const VolanteView = ({ scaleClass = '', isForPreview = false }: { scaleClass?: string; isForPreview?: boolean }) => {
+  const VolanteView = ({ scaleClass = '', isForPreview = false, bindRef }: { scaleClass?: string; isForPreview?: boolean; bindRef?: React.RefObject<HTMLDivElement | null> }) => {
     const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=0f172a&data=${encodeURIComponent(qrUrl)}`;
 
     const sizeClasses = isForPreview ? 'w-[352px] h-[756px]' : 'w-[93mm] h-[200mm]';
 
     return (
       <div 
-        ref={isForPreview ? volanteRef : null}
+        ref={bindRef}
         className={`${sizeClasses} rounded-[2rem] overflow-hidden flex flex-col justify-between p-6 border relative select-none box-border ${tema.fontClass} ${scaleClass}`}
         style={{ 
           backgroundColor: tema.bgColor, 
@@ -268,7 +268,7 @@ export default function GeneradorVolantes() {
   };
 
   // Renderizador de un tríptico de 3 paneles completo
-  const TripticoView = ({ isForPreview = false, forceFace }: { isForPreview?: boolean; forceFace?: 'exterior' | 'interior' }) => {
+  const TripticoView = ({ isForPreview = false, forceFace, bindRef }: { isForPreview?: boolean; forceFace?: 'exterior' | 'interior'; bindRef?: React.RefObject<HTMLDivElement | null> }) => {
     const face = forceFace || tripticoFace;
     
     // Configurar URL del QR dinámico
@@ -278,13 +278,18 @@ export default function GeneradorVolantes() {
     // Buscar el destacado
     const destacado = MASTER_DATABASE.find(p => p.id === menuDestacadoId) || MASTER_DATABASE[0];
 
-    const sizeClasses = isForPreview ? 'w-[352px] h-[756px]' : 'w-[93mm] h-[200mm]';
+    const sizeClasses = isForPreview ? 'w-[352px] h-[756px]' : 'w-[86.8mm] h-[200mm]';
 
     // Panel 1: Solapa Interna (reseña o producto destacado)
     const renderSolapa = () => (
       <div 
-        className={`p-6 border flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[93mm] h-[200mm]'} ${tema.fontClass}`}
-        style={{ backgroundColor: tema.bgColor, borderColor: tema.borderColor, color: tema.textColor }}
+        className={`p-6 flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[86.8mm] h-[200mm]'} ${tema.fontClass}`}
+        style={{ 
+          backgroundColor: tema.bgColor, 
+          border: `1px solid ${tema.borderColor}`, 
+          color: tema.textColor,
+          borderRadius: '2rem'
+        }}
       >
         <div className="space-y-4 text-center">
           <span 
@@ -301,9 +306,9 @@ export default function GeneradorVolantes() {
           </p>
         </div>
 
-        <div className="border-t py-4 my-2" style={{ borderColor: tema.borderColor }}>
-          <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-2">Especialidad Destacada</span>
-          <div className="relative aspect-[16/9] rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: tema.borderColor }}>
+        <div style={{ borderTop: `1px solid ${tema.borderColor}30`, padding: '1rem 0', margin: '0.5rem 0' }}>
+          <span className="text-[8px] font-black uppercase tracking-widest block mb-2" style={{ color: '#94A3B8' }}>Especialidad Destacada</span>
+          <div className="relative aspect-[16/9] overflow-hidden" style={{ border: `1px solid ${tema.borderColor}30`, borderRadius: '0.75rem' }}>
             <img src={`/${destacado.imagen}`} alt={destacado.nombre} className="w-full h-full object-cover" />
           </div>
           <div className="mt-2 text-left space-y-1">
@@ -319,7 +324,7 @@ export default function GeneradorVolantes() {
           </div>
         </div>
 
-        <div className="mt-auto pt-2 border-t text-center" style={{ borderColor: tema.borderColor }}>
+        <div className="text-center" style={{ borderTop: `1px solid ${tema.borderColor}30`, paddingTop: '0.5rem' }}>
           <p className="text-[8px] font-black tracking-widest opacity-40 uppercase">El Lingote Español</p>
         </div>
       </div>
@@ -328,8 +333,13 @@ export default function GeneradorVolantes() {
     // Panel 2: Contraportada
     const renderContraportada = () => (
       <div 
-        className={`p-6 border flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[93mm] h-[200mm]'} ${tema.fontClass}`}
-        style={{ backgroundColor: tema.bgColor, borderColor: tema.borderColor, color: tema.textColor }}
+        className={`p-6 flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[86.8mm] h-[200mm]'} ${tema.fontClass}`}
+        style={{ 
+          backgroundColor: tema.bgColor, 
+          border: `1px solid ${tema.borderColor}`, 
+          color: tema.textColor,
+          borderRadius: '2rem'
+        }}
       >
         <div className="space-y-4 text-center">
           <span 
@@ -347,7 +357,7 @@ export default function GeneradorVolantes() {
         </div>
 
         <div className="flex flex-col items-center justify-center my-4">
-          <div className="bg-white p-2 rounded-2xl shadow-xl border flex items-center justify-center" style={{ borderColor: '#E2E8F0' }}>
+          <div className="bg-white p-2 flex items-center justify-center" style={{ border: '1px solid #E2E8F0', borderRadius: '1rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
             <img src={qrSrc} alt="QR Menú WhatsApp" className="w-28 h-28 object-contain" />
           </div>
           <span className="text-[8px] font-black uppercase tracking-widest mt-2" style={{ color: tema.accentText }}>
@@ -355,18 +365,18 @@ export default function GeneradorVolantes() {
           </span>
         </div>
 
-        <div className="space-y-3 mt-auto border-t pt-4 text-left" style={{ borderColor: tema.borderColor }}>
+        <div className="space-y-3 mt-auto text-left" style={{ borderTop: `1px solid ${tema.borderColor}30`, paddingTop: '1rem' }}>
           <div className="space-y-1">
-            <span className="text-[7px] font-black uppercase tracking-wider text-slate-400">Dirección</span>
+            <span className="text-[7px] font-black uppercase tracking-wider block" style={{ color: '#94A3B8' }}>Dirección</span>
             <p className="text-[8px] font-bold leading-tight">📍 {direccionReferencia}</p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <span className="text-[7px] font-black uppercase tracking-wider text-slate-400">WhatsApp</span>
+              <span className="text-[7px] font-black uppercase tracking-wider block" style={{ color: '#94A3B8' }}>WhatsApp</span>
               <p className="text-[8px] font-black" style={{ color: tema.textColor }}>+(506) 8000-0000</p>
             </div>
             <div>
-              <span className="text-[7px] font-black uppercase tracking-wider text-slate-400">Horario</span>
+              <span className="text-[7px] font-black uppercase tracking-wider block" style={{ color: '#94A3B8' }}>Horario</span>
               <p className="text-[8px] font-bold">Miér - Dom: 10am - 8pm</p>
             </div>
           </div>
@@ -377,8 +387,13 @@ export default function GeneradorVolantes() {
     // Panel 3: Portada
     const renderPortada = () => (
       <div 
-        className={`p-6 border flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[93mm] h-[200mm]'} ${tema.fontClass}`}
-        style={{ backgroundColor: tema.bgColor, borderColor: tema.borderColor, color: tema.textColor }}
+        className={`p-6 flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[86.8mm] h-[200mm]'} ${tema.fontClass}`}
+        style={{ 
+          backgroundColor: tema.bgColor, 
+          border: `1px solid ${tema.borderColor}`, 
+          color: tema.textColor,
+          borderRadius: '2rem'
+        }}
       >
         <div className="space-y-4 text-center">
           <div className="flex justify-center mt-2">
@@ -398,7 +413,7 @@ export default function GeneradorVolantes() {
           </p>
         </div>
 
-        <div className="my-4 relative aspect-[4/3] rounded-2xl overflow-hidden border shadow-md" style={{ borderColor: tema.borderColor }}>
+        <div className="my-4 relative aspect-[4/3] overflow-hidden" style={{ border: `1px solid ${tema.borderColor}`, borderRadius: '1rem' }}>
           <img src={menuCoverImage} alt="Portada Menú" className="w-full h-full object-cover rounded-2xl" />
         </div>
 
@@ -423,9 +438,9 @@ export default function GeneradorVolantes() {
       const imagePath = p.imagen ? `/${p.imagen}` : '/clasico.webp';
 
       return (
-        <div key={id} className="flex gap-2 items-start py-2 border-b" style={{ borderColor: `${tema.borderColor}30` }}>
+        <div key={id} className="flex gap-2 items-start py-2" style={{ borderBottom: `1px solid ${tema.borderColor}30` }}>
           {p.imagen && (
-            <div className="w-10 h-10 rounded-lg overflow-hidden border shrink-0" style={{ borderColor: tema.borderColor }}>
+            <div className="w-10 h-10 overflow-hidden shrink-0" style={{ border: `1px solid ${tema.borderColor}`, borderRadius: '0.5rem' }}>
               <img src={imagePath} alt={nombre} className="w-full h-full object-cover" />
             </div>
           )}
@@ -452,11 +467,16 @@ export default function GeneradorVolantes() {
 
       return (
         <div 
-          className={`p-6 border flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[93mm] h-[200mm]'} ${tema.fontClass}`}
-          style={{ backgroundColor: tema.bgColor, borderColor: tema.borderColor, color: tema.textColor }}
+          className={`p-6 flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[86.8mm] h-[200mm]'} ${tema.fontClass}`}
+          style={{ 
+            backgroundColor: tema.bgColor, 
+            border: `1px solid ${tema.borderColor}`, 
+            color: tema.textColor,
+            borderRadius: '2rem'
+          }}
         >
           <div className="flex-1 flex flex-col">
-            <div className="text-center pb-2 border-b-2" style={{ borderColor: tema.accentText }}>
+            <div style={{ textAlign: 'center', paddingBottom: '0.5rem', borderBottom: `2px solid ${tema.accentText}` }}>
               <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Sección 01</span>
               <h3 className="text-lg font-black uppercase italic tracking-tighter" style={{ color: tema.accentText }}>
                 Nuestros Lingotes
@@ -466,7 +486,7 @@ export default function GeneradorVolantes() {
               {items.map(p => renderMenuItem(p))}
             </div>
           </div>
-          <div className="pt-2 border-t text-center" style={{ borderColor: tema.borderColor }}>
+          <div className="text-center" style={{ borderTop: `1px solid ${tema.borderColor}30`, paddingTop: '0.5rem' }}>
             <p className="text-[7px] font-black opacity-30 uppercase tracking-widest">Tradición Española</p>
           </div>
         </div>
@@ -476,26 +496,31 @@ export default function GeneradorVolantes() {
     // Panel 5: Columna Central (Menú Combos / Promos)
     const renderColumnaPromos = () => {
       const items = tripticoPromos.map(id => 
-        MENU_PROMOCIONES.find(p => p.id === id)
+        MENU_PROMOCIONES.find(p => p.id === id) || MENU_FAMILIAR.find(p => p.id === id)
       ).filter(Boolean);
 
       return (
         <div 
-          className={`p-6 border flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[93mm] h-[200mm]'} ${tema.fontClass}`}
-          style={{ backgroundColor: tema.bgColor, borderColor: tema.borderColor, color: tema.textColor }}
+          className={`p-6 flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[86.8mm] h-[200mm]'} ${tema.fontClass}`}
+          style={{ 
+            backgroundColor: tema.bgColor, 
+            border: `1px solid ${tema.borderColor}`, 
+            color: tema.textColor,
+            borderRadius: '2rem'
+          }}
         >
           <div className="flex-1 flex flex-col">
-            <div className="text-center pb-2 border-b-2" style={{ borderColor: tema.accentText }}>
+            <div style={{ textAlign: 'center', paddingBottom: '0.5rem', borderBottom: `2px solid ${tema.accentText}` }}>
               <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Sección 02</span>
               <h3 className="text-lg font-black uppercase italic tracking-tighter" style={{ color: tema.accentText }}>
-                Combos & Promociones
+                Promos & Familiares
               </h3>
             </div>
             <div className="flex-1 overflow-y-auto mt-2 pr-1 space-y-1">
               {items.map(p => renderMenuItem(p))}
             </div>
           </div>
-          <div className="pt-2 border-t text-center" style={{ borderColor: tema.borderColor }}>
+          <div className="text-center" style={{ borderTop: `1px solid ${tema.borderColor}30`, paddingTop: '0.5rem' }}>
             <p className="text-[7px] font-black opacity-30 uppercase tracking-widest">¡Hechos para Compartir!</p>
           </div>
         </div>
@@ -510,11 +535,16 @@ export default function GeneradorVolantes() {
 
       return (
         <div 
-          className={`p-6 border flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[93mm] h-[200mm]'} ${tema.fontClass}`}
-          style={{ backgroundColor: tema.bgColor, borderColor: tema.borderColor, color: tema.textColor }}
+          className={`p-6 flex flex-col justify-between select-none box-border ${isForPreview ? sizeClasses : 'w-[86.8mm] h-[200mm]'} ${tema.fontClass}`}
+          style={{ 
+            backgroundColor: tema.bgColor, 
+            border: `1px solid ${tema.borderColor}`, 
+            color: tema.textColor,
+            borderRadius: '2rem'
+          }}
         >
           <div className="flex-1 flex flex-col">
-            <div className="text-center pb-2 border-b-2" style={{ borderColor: tema.accentText }}>
+            <div style={{ textAlign: 'center', paddingBottom: '0.5rem', borderBottom: `2px solid ${tema.accentText}` }}>
               <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Sección 03</span>
               <h3 className="text-lg font-black uppercase italic tracking-tighter" style={{ color: tema.accentText }}>
                 Postres y Extras
@@ -524,7 +554,7 @@ export default function GeneradorVolantes() {
               {items.map(p => renderMenuItem(p))}
             </div>
           </div>
-          <div className="pt-2 border-t text-center" style={{ borderColor: tema.borderColor }}>
+          <div className="text-center" style={{ borderTop: `1px solid ${tema.borderColor}30`, paddingTop: '0.5rem' }}>
             <p className="text-[7px] font-black opacity-30 uppercase tracking-widest">El Broche de Oro</p>
           </div>
         </div>
@@ -533,7 +563,10 @@ export default function GeneradorVolantes() {
 
     if (!isForPreview) {
       return (
-        <div className="grid grid-cols-3 gap-x-[4.5mm] w-[279.4mm] h-[215.9mm] box-border relative print:bg-white bg-white">
+        <div 
+          className="grid grid-cols-3 gap-x-[4.5mm] w-[279.4mm] h-[215.9mm] box-border relative print:bg-white bg-white"
+          style={{ padding: '5mm' }}
+        >
           {face === 'exterior' ? (
             <>
               {renderSolapa()}
@@ -553,9 +586,13 @@ export default function GeneradorVolantes() {
 
     return (
       <div 
-        ref={tripticoRef}
-        className="flex flex-row p-4 bg-slate-50/50 rounded-[2.5rem] border shadow-sm select-none justify-center shrink-0 w-fit gap-4 overflow-hidden"
-        style={{ borderColor: tema.borderColor }}
+        ref={bindRef}
+        className="flex flex-row p-4 select-none justify-center shrink-0 w-fit gap-4 overflow-hidden"
+        style={{ 
+          backgroundColor: tema.id === 'premium-dark' ? '#090D16' : '#F8FAFC', 
+          border: `1px solid ${tema.borderColor}`, 
+          borderRadius: '2.5rem' 
+        }}
       >
         {face === 'exterior' ? (
           <>
@@ -853,7 +890,7 @@ export default function GeneradorVolantes() {
                   
                   {/* COLUMNA 1: LINGOTES */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Columna 1: Selección de Lingotes (Máx 4)</label>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Columna 1: Selección de Lingotes</label>
                     <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl">
                       {MASTER_DATABASE.filter(p => p.categoria === 'lingotes').map(p => {
                         const isChecked = tripticoLingotes.includes(p.id);
@@ -864,9 +901,7 @@ export default function GeneradorVolantes() {
                               checked={isChecked}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  if (tripticoLingotes.length < 4) {
-                                    setTripticoLingotes([...tripticoLingotes, p.id]);
-                                  }
+                                  setTripticoLingotes([...tripticoLingotes, p.id]);
                                 } else {
                                   setTripticoLingotes(tripticoLingotes.filter(id => id !== p.id));
                                 }
@@ -880,38 +915,67 @@ export default function GeneradorVolantes() {
                     </div>
                   </div>
 
-                  {/* COLUMNA 2: PROMOS */}
+                  {/* COLUMNA 2: PROMOS Y FAMILIARES */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Columna 2: Selección de Promociones (Máx 3)</label>
-                    <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl">
-                      {MENU_PROMOCIONES.map(p => {
-                        const isChecked = tripticoPromos.includes(p.id);
-                        return (
-                          <label key={p.id} className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  if (tripticoPromos.length < 3) {
-                                    setTripticoPromos([...tripticoPromos, p.id]);
-                                  }
-                                } else {
-                                  setTripticoPromos(tripticoPromos.filter(id => id !== p.id));
-                                }
-                              }}
-                              className="accent-lingote-gold"
-                            />
-                            <span className="truncate">{p.nombre}</span>
-                          </label>
-                        );
-                      })}
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Columna 2: Promociones y Versiones Familiares</label>
+                    <div className="space-y-3 bg-slate-50 p-3 rounded-xl max-h-60 overflow-y-auto">
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-1">Combos y Promociones</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {MENU_PROMOCIONES.map(p => {
+                            const isChecked = tripticoPromos.includes(p.id);
+                            return (
+                              <label key={p.id} className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setTripticoPromos([...tripticoPromos, p.id]);
+                                    } else {
+                                      setTripticoPromos(tripticoPromos.filter(id => id !== p.id));
+                                    }
+                                  }}
+                                  className="accent-lingote-gold"
+                                />
+                                <span className="truncate">{p.nombre}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 border-t pt-2" style={{ borderColor: '#E2E8F0' }}>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-1">Menú Familiar / Eventos (10 Personas)</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {MENU_FAMILIAR.map(p => {
+                            const isChecked = tripticoPromos.includes(p.id);
+                            return (
+                              <label key={p.id} className="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setTripticoPromos([...tripticoPromos, p.id]);
+                                    } else {
+                                      setTripticoPromos(tripticoPromos.filter(id => id !== p.id));
+                                    }
+                                  }}
+                                  className="accent-lingote-gold"
+                                />
+                                <span className="truncate">{p.nombre}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* COLUMNA 3: EXTRAS */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Columna 3: Selección de Postres y Bebidas (Máx 4)</label>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Columna 3: Selección de Postres y Bebidas</label>
                     <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl">
                       {MASTER_DATABASE.filter(p => p.categoria === 'postres' || p.categoria === 'bebidas' || p.categoria === 'salsas').map(p => {
                         const isChecked = tripticoExtras.includes(p.id);
@@ -922,9 +986,7 @@ export default function GeneradorVolantes() {
                               checked={isChecked}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  if (tripticoExtras.length < 4) {
-                                    setTripticoExtras([...tripticoExtras, p.id]);
-                                  }
+                                  setTripticoExtras([...tripticoExtras, p.id]);
                                 } else {
                                   setTripticoExtras(tripticoExtras.filter(id => id !== p.id));
                                 }
@@ -945,8 +1007,8 @@ export default function GeneradorVolantes() {
                     <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
                       {[
                         ...tripticoLingotes.map(id => MASTER_DATABASE.find(x => x.id === id)),
-                        ...tripticoPromos.map(id => MENU_PROMOCIONES.find(x => x.id === id)),
-                        ...tripticoExtras.map(id => MASTER_DATABASE.find(x => x.id === id) || MENU_PROMOCIONES.find(x => x.id === id)),
+                        ...tripticoPromos.map(id => MENU_PROMOCIONES.find(x => x.id === id) || MENU_FAMILIAR.find(x => x.id === id)),
+                        ...tripticoExtras.map(id => MASTER_DATABASE.find(x => x.id === id) || MENU_PROMOCIONES.find(x => x.id === id) || MENU_FAMILIAR.find(x => x.id === id)),
                         MASTER_DATABASE.find(x => x.id === menuDestacadoId)
                       ].filter(Boolean).filter((v, i, a) => a.findIndex(t => t?.id === v?.id) === i).map((item) => {
                         const p = item as any;
@@ -1046,8 +1108,10 @@ export default function GeneradorVolantes() {
                   <VolanteView isForPreview={true} />
                 </div>
               ) : (
-                <div className="scale-[0.4] sm:scale-[0.5] md:scale-[0.6] lg:scale-[0.7] xl:scale-[0.8] origin-top my-4 shrink-0">
-                  <TripticoView isForPreview={true} />
+                <div className="w-[450px] h-[320px] overflow-hidden relative mx-auto shrink-0 my-4">
+                  <div className="absolute left-1/2 -translate-x-1/2 origin-top scale-[0.4] w-[1120px] h-[756px]">
+                    <TripticoView isForPreview={true} />
+                  </div>
                 </div>
               )}
             </div>
@@ -1080,6 +1144,12 @@ export default function GeneradorVolantes() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* CONTENEDORES OCULTOS EXCLUSIVOS PARA CAPTURA DE IMAGEN (EVITA CRASHES DE ESCALADO Y TRUNCAMIENTOS) */}
+      <div className="absolute left-[-9999px] top-[-9999px] no-print">
+        <VolanteView isForPreview={true} bindRef={volanteCaptureRef} />
+        <TripticoView isForPreview={true} forceFace={tripticoFace} bindRef={tripticoCaptureRef} />
       </div>
 
       {/* ÁREA EXCLUSIVA DE IMPRESIÓN PARA EL VOLANTE INDIVIDUAL */}
