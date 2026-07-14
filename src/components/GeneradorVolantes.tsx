@@ -81,7 +81,7 @@ export default function GeneradorVolantes() {
   const [descOferta, setDescOferta] = useState('En tu primer pedido de Lingotes Familiares o Individuales indicándonos que eres de la zona.');
   const [slogan, setSlogan] = useState('Artesanales, jugosos y hechos con amor en el Residencial.');
   const [imagenUrl, setImagenUrl] = useState('/clasico.webp');
-  const [qrUrl, setQrUrl] = useState('https://wa.me/50680000000?text=Hola!%20Soy%20vecino%20y%20quiero%20hacer%20un%20pedido%20con%20el%20descuento%20especial.');
+  const [qrUrl, setQrUrl] = useState('https://wa.me/50672257606?text=Hola!%20Soy%20vecino%20y%20quiero%20hacer%20un%20pedido%20con%20el%20descuento%20especial.');
   const [mostrarGuias, setMostrarGuias] = useState(true);
 
   // --- Estados del Modo de Marketing ---
@@ -272,7 +272,7 @@ export default function GeneradorVolantes() {
     const face = forceFace || tripticoFace;
     
     // Configurar URL del QR dinámico
-    const menuQrUrl = `https://wa.me/50680000000?text=${encodeURIComponent(menuWhatsAppText)}`;
+    const menuQrUrl = `https://wa.me/50672257606?text=${encodeURIComponent(menuWhatsAppText)}`;
     const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=0f172a&data=${encodeURIComponent(menuQrUrl)}`;
 
     // Buscar el destacado
